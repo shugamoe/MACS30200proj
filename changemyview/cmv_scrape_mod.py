@@ -1,6 +1,7 @@
 # Scraper for /r/changemyview data
 
 import praw
+from praw.models import Redditor
 import os
 import pandas as pd
 import re
@@ -23,15 +24,22 @@ class CmvScraperModder:
         '''
         Initializes the class with an instance of the praw.Reddit class.
         '''
+        # PRAW objects
         self.praw_agent = praw.Reddit('cmv_scrape', # Site ID
             user_agent = '/u/shugamoe /r/changemyview scraper')
-        self.praw_agent.read_only = True # We're just here to look
         self.subreddit = self.praw_agent.subreddit('changemyview')
+
+        self.praw_agent.read_only = True # We're just here to look
 
         # Example instances to to tinker with
         self.eg_submission = self.praw_agent.submission('5kgxsz')
         self.eg_comment = self.praw_agent.comment('61saed')
         self.eg_user = self.praw_agent.redditor('shugamoe')
+
+        # Dataframes
+        self.cmv_subs = None
+        self.cmv_author_coms = None
+        self.cmv_author_subs = None
 
     def get_submissions(self, start, end):
         '''
@@ -41,13 +49,16 @@ class CmvScraperModder:
         init_col_names = ['id', 'author', 'praw_inst']
         sub_df_dict = {col_name: [] for col_name in init_col_names}
 
+        subs_gathered = 0
         for sub in self.subreddit.submissions(start, end):
+            subs_gathered += 1
             sub_df_dict['author'].append(str(sub.author))
             sub_df_dict['id'].append(str(sub.id))
             sub_df_dict['praw_inst'].append(sub)
 
+        print('{} submissions gathered'.format(subs_gathered))
         df = pd.DataFrame(sub_df_dict)
-        self._subs_df = df.set_index('id', drop = False)
+        self.cmv_subs = df.set_index('id', drop = False)
 
     def update_subs_df(self, start, end):
         '''
@@ -56,12 +67,12 @@ class CmvScraperModder:
             - How many deltas the OP awarded
             - Number of top level replies
         '''
-        if hasattr(self, '_subs_df'):
+        if hasattr(self, 'subs_df'):
             pass
         else:
             self.get_submissions(start, end)
 
-        all_subs = self._subs_df
+        all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs['author'] != '[deleted]'][['praw_inst']]
 
         lambda_sub_info = lambda sub_inst: self.get_sub_info(sub_inst)
@@ -70,7 +81,7 @@ class CmvScraperModder:
 
         # TODO(jcm): Get index matching without column duplication working, 
         # matching objects is slower than matching stringsmmi
-        self._subs_df = all_subs.merge(valid_subs, on = 'praw_inst')
+        self.cmv_subs = all_subs.merge(valid_subs, on = 'praw_inst')
 
     def get_sub_info(self, sub_inst):
         '''
@@ -80,7 +91,7 @@ class CmvScraperModder:
             - How many deltas the OP awarded
             - Number of top level replies
         '''
-        Submission = CmvSubmission(sub_inst, self)
+        Submission = CmvSubmission(sub_inst, self.praw_agent)
         Submission.parse_root_comments()
 
         return(Submission.get_series())
@@ -99,7 +110,9 @@ class CmvScraperModder:
 
         return(output_dir)
 
-
+# Would like to have this inherit from praw's submissions class but with the way
+# I'm scraping the data I would have to tinker with a praw's sublisting class 
+# and subreddit class.
 class CmvSubmission:
     '''
     A class of a /r/changemyview submission
@@ -109,8 +122,8 @@ class CmvSubmission:
                      'OP_gave_delta': False,
                      'num_deltas_from_OP': 0}
 
-    def __init__(self, sub_inst, ScraperModder = None):
-        self.praw_agent = ScraperModder.praw_agent
+    def __init__(self, sub_inst, praw_agent):
+        self.praw_agent = praw_agent
         self.submission = sub_inst
         self.author = str(self.submission.author)
 
@@ -167,7 +180,9 @@ class CmvSubmission:
         return(pd.Series(self.vars))
 
 
-class CmvSubAuthor:
+# TODO(jcm): Implement the inheritance from praw's Redditor class, would be a 
+# more effective use of OOP
+class CmvSubAuthor(Redditor):
     '''
     Class for scraping the history of an author of /r/changemyview
     '''
@@ -175,66 +190,48 @@ class CmvSubAuthor:
                      'com_id': [],
                      'sub_inst': [],
                      'com_inst': []}
+
     def __init__(self, user_name, praw_agent):
         '''
         '''
+        # self.super().__init__(praw_agent, user_name)
         self.praw_agent = praw_agent
         self.user = self.praw_agent.redditor(user_name)
         self.user_name = user_name
 
         # Important variables to track
         self.created_utc = self.user.created_utc
-        self.com_sub_ids = {}
+        self.history = self.VARS_TEMPLATE
 
-    def get_comment_ids(self):
+    def get_history_for(self, post_type):
         '''
         '''
-        # Get coms in reverse chronological order
-        comments = self.user.comments.new(limit=None)
+        # Get posts
+        post_generator = getattr(self, 'post_type')
+        posts = post_generator.new(limit=None)
 
+        num_posts_retrieved = 0
+        post_prefix = post_type[:3]
         for com in comments:
-            self.com_ids.append(com.id)
+            num_posts_retrieved += 1
+            self.history[post_prefix + '_id'].append(com.id)
+            self.history[post_prefix + '_inst'].append(com)
 
-        num_coms_retrieved = len(self.com_ids)
-        if  num_coms_retrieved == 1000:
-            print('1000 comments retrieved exactly,'
+        if num_posts_retrieved == 1000:
+            print('1000 {} retrieved exactly,'
                 ' may need to find way to retrieve more for {}.'.format(
-                    self.user_name))
+                    post_type, self.user_name))
         elif num_coms_retrieved > 1000:
-            print("{} comments retrieved, don't have to worry about comment "
-                "limit)")
+            print("{} {} retrieved, don't have to worry about comment limit".format(
+                num_posts_retrieved, post_type))
 
-    def get_submission_ids(self):
-        '''
-        '''
-        # Get submissions in reverse chronological order 
-        submissions = self.user.comments.new(limit=None)
-
-        for sub in submissions:
-            self.sub_ids.append(sub.id)
-
-        num_subs_retrieved = len(self.sub_ids)
-        if num_subs_retrieved == 1000:
-            print('1000 submissions retrieved exactly,'
-                ' may need to find way to retrieve more for {}.'.format(
-                    self.user_name))
-        elif num_subs_retrieved > 1000:
-            print("{} submissions retrieved, don't have to worry about"
-            " comment limit")       
-
-    def get_series_comment(self):
+    def get_df_post(self, post_type):
         '''
         This function returns a series so this class can update the authors'
-        comments dataframe in CmvScraperModder.
+        comments or submissions dataframe in CmvScraperModder.
         '''
-        return(pd.Series([self.com_ids]))
-
-    def get_series_submission(self):
-        '''
-        This function returns a series so this class can update the authors'
-        submissions dataframe in CmvScraperModder.
-        '''
-        return(pd.Series([self.sub_ids]))
+        return(pd.DataFrame({post_type_key: value for post_type_key in 
+            self.history if post_type_key[:3] == post_type[:3]}))
 
 
 if __name__ == '__main__':
