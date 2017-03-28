@@ -69,7 +69,7 @@ class CmvScraperModder:
                     valid_subs['praw_inst'].apply(lambda_sub_info))
 
         # TODO(jcm): Get index matching without column duplication working, 
-        # matching objects is slower than matching strings
+        # matching objects is slower than matching stringsmmi
         self._subs_df = all_subs.merge(valid_subs, on = 'praw_inst')
 
     def get_sub_info(self, sub_inst):
