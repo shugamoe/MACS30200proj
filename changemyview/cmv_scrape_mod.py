@@ -1,13 +1,15 @@
 # Scraper for /r/changemyview data
 
 import praw
-from praw.models import Redditor
+from prawcore.exceptions import Forbidden
 import os
 import pandas as pd
 import re
 import numpy as numpy
 import time
-
+import numpy as np
+import pdb
+import pickle
 
 END_2016 = 1483228799
 START_2013 = 1356998400
@@ -20,7 +22,7 @@ class CmvScraperModder:
     '''
     Class to scrape /r/changemyview for MACS 302 and possibly thesis.
     '''
-    def __init__(self):
+    def __init__(self, start, end):
         '''
         Initializes the class with an instance of the praw.Reddit class.
         '''
@@ -31,17 +33,24 @@ class CmvScraperModder:
 
         self.praw_agent.read_only = True # We're just here to look
 
+        # Start and end dates of interest
+        self.date_start = start
+        self.date_end = end
+
         # Example instances to to tinker with
         self.eg_submission = self.praw_agent.submission('5kgxsz')
-        self.eg_comment = self.praw_agent.comment('61saed')
-        self.eg_user = self.praw_agent.redditor('shugamoe')
+        self.eg_comment = self.praw_agent.comment('cr2jp5a')
+        self.eg_user = self.praw_agent.redditor('RocketCity1234')
 
-        # Dataframes
-        self.cmv_subs = None
-        self.cmv_author_coms = None
-        self.cmv_author_subs = None
+    @classmethod
+    def from_pickle(cls, pickle_path):
+        '''
+        Recovers an instance of CmvScraperModder from pickle file.
+        '''
+        pass 
+        
 
-    def get_submissions(self, start, end):
+    def get_submissions(self):
         '''
         This function gathers the submission IDs for submissions in 
         /r/changemyview
@@ -50,17 +59,18 @@ class CmvScraperModder:
         sub_df_dict = {col_name: [] for col_name in init_col_names}
 
         subs_gathered = 0
-        for sub in self.subreddit.submissions(start, end):
+        for sub in self.subreddit.submissions(self.date_start, 
+                self.date_end):
             subs_gathered += 1
             sub_df_dict['author'].append(str(sub.author))
-            sub_df_dict['id'].append(str(sub.id))
+            sub_df_dict['id'].append(sub.id)
             sub_df_dict['praw_inst'].append(sub)
 
         print('{} submissions gathered'.format(subs_gathered))
         df = pd.DataFrame(sub_df_dict)
         self.cmv_subs = df.set_index('id', drop = False)
 
-    def update_subs_df(self, start, end):
+    def update_subs_df(self):
         '''
         This function retrieves following information about submissions:
             - Whether the OP awarded a delta
@@ -70,12 +80,12 @@ class CmvScraperModder:
         if hasattr(self, 'subs_df'):
             pass
         else:
-            self.get_submissions(start, end)
+            self.get_submissions()
 
         all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs['author'] != '[deleted]'][['praw_inst']]
 
-        lambda_sub_info = lambda sub_inst: self.get_sub_info(sub_inst)
+        lambda_sub_info = lambda sub_inst: self._get_sub_info(sub_inst)
         valid_subs[list(CmvSubmission.VARS_TEMPLATE.keys())] = (
                     valid_subs['praw_inst'].apply(lambda_sub_info))
 
@@ -83,7 +93,7 @@ class CmvScraperModder:
         # matching objects is slower than matching stringsmmi
         self.cmv_subs = all_subs.merge(valid_subs, on = 'praw_inst')
 
-    def get_sub_info(self, sub_inst):
+    def _get_sub_info(self, sub_inst):
         '''
         This function retrieves the following information for a single 
         submission:
@@ -95,7 +105,42 @@ class CmvScraperModder:
         Submission.parse_root_comments()
 
         return(Submission.get_series())
+    
+    def get_author_histories(self):
+        '''
+        '''
+        if hasattr(self, 'cmv_subs'):
+            pass
+        else:
+            self.get_submissions()
+        
+        get_auth_hist_vrized = np.vectorize(self._get_author_history,
+                otypes = '?')
+        get_auth_hist_vrized(self.cmv_subs['author'].unique())
 
+    def _get_author_history(self, author):
+        '''
+        '''
+        SubAuthor = CmvSubAuthor(self.praw_agent.redditor(author))
+        try:
+            SubAuthor.get_history_for('comments')
+            SubAuthor.get_history_for('submissions')
+        except Forbidden:
+            print('{} was suspended'.format(author))
+            return(None)
+        
+        if hasattr(self, 'cmv_author_coms'):
+            self.cmv_author_coms= self.cmv_author_coms.append(
+                    SubAuthor.get_post_df('comments'))
+        else:
+            self.cmv_author_coms = SubAuthor.get_post_df('comments')
+
+        if hasattr(self, 'cmv_author_subs'):
+            self.cmv_author_subs = self.cmv_author_subs.append(
+                    SubAuthor.get_post_df('submissions'))
+        else:
+            self.cmv_author_subs = SubAuthor.get_post_df('submissions')
+    
     @staticmethod
     def make_output_dir(dir_name):
         '''
@@ -182,7 +227,7 @@ class CmvSubmission:
 
 # TODO(jcm): Implement the inheritance from praw's Redditor class, would be a 
 # more effective use of OOP
-class CmvSubAuthor(Redditor):
+class CmvSubAuthor:
     '''
     Class for scraping the history of an author of /r/changemyview
     '''
@@ -191,49 +236,79 @@ class CmvSubAuthor(Redditor):
                      'sub_inst': [],
                      'com_inst': []}
 
-    def __init__(self, user_name, praw_agent):
+    def __init__(self, redditor_inst):
         '''
         '''
-        # self.super().__init__(praw_agent, user_name)
-        self.praw_agent = praw_agent
-        self.user = self.praw_agent.redditor(user_name)
-        self.user_name = user_name
+        self.user = redditor_inst
+        self.user_name = str(redditor_inst.name)
 
         # Important variables to track
-        self.created_utc = self.user.created_utc
         self.history = self.VARS_TEMPLATE
 
     def get_history_for(self, post_type):
         '''
         '''
         # Get posts
-        post_generator = getattr(self, 'post_type')
+        post_generator = getattr(self.user, post_type)
         posts = post_generator.new(limit=None)
 
-        num_posts_retrieved = 0
+        posts_retrieved = 0
         post_prefix = post_type[:3]
-        for com in comments:
-            num_posts_retrieved += 1
-            self.history[post_prefix + '_id'].append(com.id)
-            self.history[post_prefix + '_inst'].append(com)
+        for post in posts:
+            posts_retrieved += 1
+            self.history[post_prefix + '_id'].append(post.id)
+            self.history[post_prefix + '_inst'].append(post)
 
-        if num_posts_retrieved == 1000:
+        # pdb.set_trace()
+        if posts_retrieved == 1000:
             print('1000 {} retrieved exactly,'
-                ' may need to find way to retrieve more for {}.'.format(
+                ' attempting to retrive more for {}.'.format(
                     post_type, self.user_name))
-        elif num_coms_retrieved > 1000:
+            self.get_more_history_for(post_prefix, post_type,
+                    post_generator)
+        elif posts_retrieved > 1000:
             print("{} {} retrieved, don't have to worry about comment limit".format(
-                num_posts_retrieved, post_type))
+                posts_retrieved, post_type))
+        else:
+            print("{} {} retrieved for {}".format(posts_retrieved,
+                post_type, self.user_name))
 
-    def get_df_post(self, post_type):
+    def get_more_history_for(self, post_prefix, post_type, post_generator):
+        '''
+        '''
+        con_posts = post_generator.controversial(limit=None)
+        hot_posts = post_generator.hot(limit=None)
+        top_posts = post_generator.top(limit=None)
+        
+        new_posts_found, same_posts_found = 0, 0
+        for post_types in zip(con_posts, hot_posts, top_posts):
+            for post in post_types:
+                if post not in self.history[post_prefix + '_id']:
+                    new_posts_found += 1
+                    self.history[post_prefix + '_id'].append(post.id)
+                    self.history[post_prefix + '_inst'].append(post)
+                else:
+                    same_posts_found += 1
+        
+        if new_posts_found == 3000:
+            print("Maximum number (3000) of new [] found".format(post_type))
+        else:
+            print("{} new and {} same {} found".format(new_posts_found,
+                same_posts_found, post_type))
+
+    def get_post_df(self, post_type):
         '''
         This function returns a series so this class can update the authors'
         comments or submissions dataframe in CmvScraperModder.
         '''
-        return(pd.DataFrame({post_type_key: value for post_type_key in 
-            self.history if post_type_key[:3] == post_type[:3]}))
+        attribution_dict = {post_type_key: value for post_type_key, value in
+                self.history.items() if post_type[:3] == 
+                post_type_key[:3]}
+        attribution_dict.update({'author': self.user_name})
+        return(pd.DataFrame(attribution_dict))
 
 
 if __name__ == '__main__':
-    SModder = CmvScraperModder()
-    # Scraper.update_subs_df(START_BDAY_2016, END_BDAY_2016)
+    SModder = CmvScraperModder(START_BDAY_2016, END_BDAY_2016)
+    SModder.update_subs_df()
+    SModder.get_author_histories()
