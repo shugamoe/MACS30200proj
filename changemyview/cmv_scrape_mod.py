@@ -354,5 +354,5 @@ class CMVAuthSubmission:
 
 if __name__ == '__main__':
     SModder = CMVScraperModder(START_BDAY_2016, END_BDAY_2016)
-    SModder.update_cmv_submissions()
-    SModder.update_author_submissions()
+    # SModder.update_cmv_submissions()
+    # SModder.update_author_submissions()
