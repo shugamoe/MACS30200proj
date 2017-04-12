@@ -342,7 +342,7 @@ class CMVAuthSubmission:
         '''
         self.submission = submission_inst
         self.stats = self.STATS_TEMPLATE
-        self.parsed = False
+        self.parsed = True
 
         # Stats that can be gathered right off the bat
         self.stats['created_utc'] = self.submission.created_utc
@@ -371,7 +371,7 @@ class CMVAuthComment:
         '''
         self.comment = comment_inst
         self.stats = self.STATS_TEMPLATE
-        self.parsed = False
+        self.parsed = True
 
         # Stats that can be gathered right away
         self.stats['created_utc'] = self.comment.created_utc 
