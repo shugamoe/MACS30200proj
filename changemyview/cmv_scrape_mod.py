@@ -42,13 +42,6 @@ class CMVScraperModder:
         self.eg_comment = self.praw_agent.comment('cr2jp5a')
         self.eg_user = self.praw_agent.redditor('RocketCity1234')
 
-    @classmethod
-    def from_pickle(cls, pickle_path):
-        '''
-        Recovers an instance of CMVScraperModder from pickle file.
-        '''
-        pass 
-        
     def get_submissions(self):
         '''
         This function gathers the submission IDs for submissions in 
@@ -116,6 +109,9 @@ class CMVScraperModder:
         get_auth_hist_vrized = np.vectorize(self._get_author_history,
                 otypes='?') # otypes kwarg to avoid double appplying func
         get_auth_hist_vrized(self.cmv_subs['author'].unique())
+        
+        
+        
 
     def _get_author_history(self, author):
         '''
@@ -140,14 +136,14 @@ class CMVScraperModder:
         else:
             self.cmv_author_subs = SubAuthor.get_post_df('submissions')
 
-    def update_author_submissions(self):
+    def update_author_history(self):
         '''
         '''
-        if hasattr(self, 'cmv_author_subs'):
+        if hasattr(self, 'cmv_author_coms'):
             pass
         else:
             self.get_author_histories()
-        
+        # Update Submissions
         sub_inst_series = self.cmv_author_subs[['sub_inst']]
 
         sub_inst_series[list(CMVAuthSubmission.STATS_TEMPLATE.keys())] = (
@@ -156,6 +152,11 @@ class CMVScraperModder:
                 ))
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series, on=
                 'sub_inst')
+        
+        # Update Comments
+        # com_inst_series = self.cmv_author_coms[['com_inst']]
+        # com_inst_series[list(CMV
+
 
     @staticmethod
     def make_output_dir(dir_name):
@@ -334,7 +335,8 @@ class CMVAuthSubmission:
     '''
     STATS_TEMPLATE = {'created_utc': None,
                      'score': None,
-                     'subreddit': None}
+                     'subreddit': None,
+                     'content': None}
     def __init__(self, submission_inst):
         '''
         '''
@@ -346,13 +348,48 @@ class CMVAuthSubmission:
         self.stats['created_utc'] = self.submission.created_utc
         self.stats['score'] = self.submission.score
         self.stats['subreddit'] = self.submission.subreddit_name_prefixed
+        self.stats['content'] = self.submission.selftext
 
     def get_stats_series(self):
         '''
         '''
         return(pd.Series(self.stats))
 
+# STATS_TEMPLATE for date, score, subreddit. Could probably include a general
+# method to update that dictionary in self.stats as well. Would also reduce
+# redundancy in having 2 get_stats_series.
+class CMVAuthComment:
+    '''
+    '''
+    STATS_TEMPLATE = {'created_utc': None,
+                      'score': None,
+                      'subreddit': None,
+                      'content': None}
+
+    def __init__(self, comment_inst):
+        '''
+        '''
+        self.comment = comment_inst
+        self.stats = self.STATS_TEMPLATE
+        self.parsed = False
+
+        # Stats that can be gathered right away
+        self.stats['created_utc'] = self.comment.created_utc 
+        self.stats['score'] = self.comment.score
+        self.stats['subreddit'] = (self.comment.
+                submission.subreddit_name_prefixed)
+        self.stats['content'] = self.comment.body
+
+    def get_stats_series(self):
+        '''
+        '''
+        return(pd.Series(self.stats))
+
+    
 if __name__ == '__main__':
     SModder = CMVScraperModder(START_BDAY_2016, END_BDAY_2016)
-    # SModder.update_cmv_submissions()
+
+    #uSModder.update_cmv_submissions()
     # SModder.update_author_submissions()
+    # with open('test.pkl', 'wb') as output:
+     #    pickle.dump(SModder, output)
