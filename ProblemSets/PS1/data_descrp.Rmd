@@ -1,0 +1,51 @@
+---
+title: "Perspectives Research Problem Set 1"
+author: "Julian McClellan"
+date: "Due 4/19/17"
+output: github_document
+bibliography: citations.bib
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE,
+                      echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(stargazer)
+theme_set(theme_minimal())
+food_inspections <- read_csv('~/Downloads/Food_Inspections.csv')
+num_obs <- nrow(food_inspections) %>%
+  mutate(State = "IL")
+
+food_inspections <- food_inspections %>% 
+  na.omit()
+num_full <- nrow(food_inspections)
+num_obs_na <- num_obs
+
+
+unique_dba <- length(unique(food_inspections$`DBA Name`))
+unique_aka <- length
+  
+stargazer(as.data.frame(food_inspections), type = 'html', median = TRUE, mean.sd = FALSE)
+```
+
+# Data
+
+The data is drawn from inspections of restaurants and other food establishments in Chicago from January 1, 2010 to the present
+(April 13, 2017).
+
+Inspections are performed by staff from the Chicago Department of Public Health’s Food Protection Program using a standardized
+procedure. The results of the inspection are inputted into a database, then reviewed and approved by a State of Illinois Licensed
+Environmental Health Practitioner. The data is available on [Chicago's open data portal](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5/data).
+
+At a meeting of the American Public Health Association, [@schenk2015food] described an [open source project](https://github.com/Chicago/food-inspections-evaluation) in which:
+
+> [T]he City of Chicago’s Department of Innovation and Technology (DoIT), in collaboration with an insurance company, and the CDPH, together developed advanced analytics to forecast 
+> food establishments that are most likely to have critical violations, which are most likely to contribute to food borne 
+> illness, so that they may be inspected first.
+
+Summary statistics of the data follow below:
+
+```{r, results='asis'}
+```
