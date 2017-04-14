@@ -13,21 +13,17 @@ knitr::opts_chunk$set(message = FALSE,
 library(tidyverse)
 library(ggplot2)
 library(stargazer)
+library(lubridate)
+
 theme_set(theme_minimal())
-food_inspections <- read_csv('~/Downloads/Food_Inspections.csv')
-num_obs <- nrow(food_inspections) %>%
-  mutate(State = "IL")
-
-food_inspections <- food_inspections %>% 
-  na.omit()
-num_full <- nrow(food_inspections)
-num_obs_na <- num_obs
-
-
-unique_dba <- length(unique(food_inspections$`DBA Name`))
-unique_aka <- length
-  
-stargazer(as.data.frame(food_inspections), type = 'html', median = TRUE, mean.sd = FALSE)
+food_inspections <- read_csv('~/Downloads/Food_Inspections.csv') %>%
+  dplyr::select(-c(Location, Address, `Inspection ID`, State)) %>%
+  mutate(`Inspection Date` = mdy(`Inspection Date`),
+         Zip = factor(Zip),
+         Risk = gsub("[^1-3]", "", Risk),
+         Risk = as.numeric(Risk),
+         City = toupper(City))
+num_obs <- nrow(food_inspections)
 ```
 
 # Data
@@ -45,7 +41,146 @@ At a meeting of the American Public Health Association, [@schenk2015food] descri
 > food establishments that are most likely to have critical violations, which are most likely to contribute to food borne 
 > illness, so that they may be inspected first.
 
-Summary statistics of the data follow below:
+Making a *single* descriptive statistics table isn't exactly the most helpful thing
+given that the majority of the variables of categorical with differing numbers of categories, but here you go:
 
-```{r, results='asis'}
+```{r tables, results='asis'}
+licence_mipu <- food_inspections %>%
+  group_by(`License #`) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+  
+lname_mipu <- food_inspections %>%
+  group_by(`DBA Name`) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+pname_mipu <- food_inspections %>%
+  group_by(`AKA Name`) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+ftype_mipu <- food_inspections %>%
+  group_by(`Facility Type`) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+risk_mipu <- food_inspections %>%
+  group_by(Risk) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+city_mipu <- food_inspections %>%
+  group_by(City) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+zip_mipu <- food_inspections %>%
+  group_by(Zip) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+itype_mipu <- food_inspections %>%
+  group_by(`Inspection Type`) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+results_mipu <- food_inspections %>%
+  group_by(Results) %>%
+  summarise(n = n()) %>%
+  {.$n} %>%
+  median()
+
+calc_mode <- function(vector, get_prop = FALSE){
+  if (get_prop){
+  sorted <- sort(table(vector), decreasing = TRUE)  
+  prop <- sorted[1] / sum(sorted)
+  sprintf("%.3f%%", 100 * prop)
+  } else {
+  names(sort(table(vector), decreasing = TRUE))[1] 
+  }
+}
+
+ calc_anti_mode <- function(vector, get_prop = FALSE){
+  if (get_prop){
+  sorted <- sort(table(vector), decreasing = FALSE)  
+  prop <- sorted[1] / sum(sorted)
+  sprintf("%.3f%%", 100 * prop)
+  } else {
+  names(sort(table(vector), decreasing = FALSE))[1] 
+  }
+ }
+ 
+ 
+attach(food_inspections)
+cat_table <- tibble(`Categorical Variables` =
+                           c("License #", "Legal Name", "Public Name",
+                             "Facility Type", "Risk (lower = riskier)",
+                             "City", "Zip Code", "Inspection Type",
+                             "Inspection Results"),
+                   `unique Values` = c(length(unique(`License #`)),
+                                                length(unique(`DBA Name`)),
+                                                length(unique(`AKA Name`)),
+                                                length(unique(`Facility Type`)),
+                                                length(unique(Risk)),
+                                         length(unique(City)), length(unique(Zip)), 
+                                                length(unique(`Inspection Type`)),
+                                                length(unique(Results))),
+                         `Median inspections per unique value` = c(
+                           licence_mipu, lname_mipu, pname_mipu, ftype_mipu,
+                           risk_mipu, city_mipu, zip_mipu, itype_mipu, results_mipu),
+                   `Most Frequent Value` = c(calc_mode(`License #`),
+                                             calc_mode(`DBA Name`),
+                                             calc_mode(`AKA Name`),
+                                             calc_mode(`Facility Type`),
+                                             calc_mode(Risk),
+                                             calc_mode(City),
+                                             calc_mode(Zip),
+                                             calc_mode(`Inspection Type`),
+                                             calc_mode(Results)
+                                             ),
+                   `Most Frequent Value Proportion` = c(calc_mode(`License #`, TRUE),
+                                             calc_mode(`DBA Name`, TRUE),
+                                             calc_mode(`AKA Name`, TRUE),
+                                             calc_mode(`Facility Type`, TRUE),
+                                             calc_mode(Risk, TRUE),
+                                             calc_mode(City, TRUE),
+                                             calc_mode(Zip, TRUE),
+                                             calc_mode(`Inspection Type`, TRUE),
+                                             calc_mode(Results, TRUE)
+                                             ),
+                   `Least Frequent Value` = c(calc_anti_mode(`License #`),
+                                             calc_anti_mode(`DBA Name`),
+                                             calc_anti_mode(`AKA Name`),
+                                             calc_anti_mode(`Facility Type`),
+                                             calc_anti_mode(Risk),
+                                             calc_anti_mode(City),
+                                             calc_anti_mode(Zip),
+                                             calc_anti_mode(`Inspection Type`),
+                                             calc_anti_mode(Results)
+                                             ),
+                   `Least Frequent Value Proportion` = c(calc_anti_mode(`License #`, TRUE),
+                                             calc_anti_mode(`DBA Name`, TRUE),
+                                             calc_anti_mode(`AKA Name`, TRUE),
+                                             calc_anti_mode(`Facility Type`, TRUE),
+                                             calc_anti_mode(Risk, TRUE),
+                                             calc_anti_mode(City, TRUE),
+                                             calc_anti_mode(Zip, TRUE),
+                                             calc_anti_mode(`Inspection Type`, TRUE),
+                                             calc_anti_mode(Results, TRUE)
+                                             )
+                   )
 ```
+
+```{r visualization, results='asis'}
+```
+
+```{r slice, results='asis'}
