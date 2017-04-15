@@ -15,7 +15,7 @@ END_2016 = 1483228799
 START_2013 = 1356998400
 
 START_BDAY_2016 = 1461110400
-END_BDAY_2016 = 1461196799
+END_BDAY_2016 = 1461130000
 
 
 class CMVScraperModder:
@@ -77,7 +77,7 @@ class CMVScraperModder:
         all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs['author'] != '[deleted]'][['sub_inst']]
 
-        valid_subs[list(CMVSubmission.STATS_TEMPLATE.keys())] = (
+        valid_subs[sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
                 valid_subs['sub_inst'].apply(lambda sub_inst:
                     CMVSubmission(sub_inst).get_stats_series()))
 
@@ -110,9 +110,6 @@ class CMVScraperModder:
                 otypes='?') # otypes kwarg to avoid double appplying func
         get_auth_hist_vrized(self.cmv_subs['author'].unique())
         
-        
-        
-
     def _get_author_history(self, author):
         '''
         '''
@@ -146,17 +143,26 @@ class CMVScraperModder:
         # Update Submissions
         sub_inst_series = self.cmv_author_subs[['sub_inst']]
 
-        sub_inst_series[list(CMVAuthSubmission.STATS_TEMPLATE.keys())] = (
+        sub_inst_series[sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
                 sub_inst_series['sub_inst'].apply(
                     lambda sub_inst: CMVAuthSubmission(sub_inst).get_stats_series()
                 ))
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series, on=
                 'sub_inst')
-        
-        # Update Comments
-        # com_inst_series = self.cmv_author_coms[['com_inst']]
-        # com_inst_series[list(CMV
+        self.cmv_author_subs.drop_duplicates(subset='sub_id', inplace=True)
 
+        # Update Comments
+        com_inst_series = self.cmv_author_coms[['com_inst']]
+        print("Comment instances gathered")
+        com_inst_series[sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
+        com_inst_series['com_inst'].apply(
+                lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
+            ))
+        print("Comment stats extracted")
+        self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series, on=
+                'com_inst')
+        self.cmv_author_coms.drop_duplicates(subset='com_id', inplace=True)
+        print("Stats merged")
 
     @staticmethod
     def make_output_dir(dir_name):
@@ -244,7 +250,9 @@ class CMVSubmission:
         '''
         if not self.parsed:
             self.parse_root_comments()
-        return(pd.Series(self.stats))
+        info_series = pd.Series(self.stats)
+        info_series.sort_index(inplace = True)
+        return(info_series)
 
 
 # TODO(jcm): Implement the inheritance from praw's Redditor class, would be a 
@@ -353,7 +361,9 @@ class CMVAuthSubmission:
     def get_stats_series(self):
         '''
         '''
-        return(pd.Series(self.stats))
+        info_series = pd.Series(self.stats)
+        info_series.sort_index(inplace = True)
+        return(info_series)
 
 # STATS_TEMPLATE for date, score, subreddit. Could probably include a general
 # method to update that dictionary in self.stats as well. Would also reduce
@@ -383,13 +393,16 @@ class CMVAuthComment:
     def get_stats_series(self):
         '''
         '''
-        return(pd.Series(self.stats))
+        print("Merging comment Stats")
+        info_series = pd.Series(self.stats)
+        info_series.sort_index(inplace = True)
+        return(info_series)
 
     
 if __name__ == '__main__':
     SModder = CMVScraperModder(START_BDAY_2016, END_BDAY_2016)
 
-    #uSModder.update_cmv_submissions()
-    # SModder.update_author_submissions()
+    SModder.update_cmv_submissions()
+    SModder.update_author_history()
     # with open('test.pkl', 'wb') as output:
      #    pickle.dump(SModder, output)

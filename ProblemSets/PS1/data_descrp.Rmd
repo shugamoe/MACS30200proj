@@ -2,7 +2,7 @@
 title: "Perspectives Research Problem Set 1"
 author: "Julian McClellan"
 date: "Due 4/19/17"
-output: github_document
+output: pdf_document
 bibliography: citations.bib
 ---
 
@@ -194,7 +194,7 @@ cat_table <- tibble(`Categorical Variables` =
                                              )
                    )
 detach(food_inspections)
-kable(cat_table, format = 'markdown')
+kable(cat_table, format = 'pandoc')
 ```
 Of course, this summary table can only tell us so much. What about where and when these
 inspections take place?
