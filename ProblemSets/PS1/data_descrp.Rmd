@@ -11,9 +11,11 @@ knitr::opts_chunk$set(message = FALSE,
                       warning = FALSE,
                       echo = FALSE)
 library(tidyverse)
+library(knitr)
 library(ggplot2)
 library(stargazer)
 library(lubridate)
+library(ggmap)
 
 theme_set(theme_minimal())
 food_inspections <- read_csv('~/Downloads/Food_Inspections.csv') %>%
@@ -22,18 +24,22 @@ food_inspections <- read_csv('~/Downloads/Food_Inspections.csv') %>%
          Zip = factor(Zip),
          Risk = gsub("[^1-3]", "", Risk),
          Risk = as.numeric(Risk),
-         City = toupper(City))
+         Results = gsub(" ", "~", Results),
+         ftype = gsub(" ", "~", `Facility Type`),
+         City = toupper(City),
+         freq = 1)
 num_obs <- nrow(food_inspections)
 ```
 
-# Data
+# Food Inspections Data
 
 The data is drawn from inspections of restaurants and other food establishments in Chicago from January 1, 2010 to the present
-(April 13, 2017).
+(April 13, 2017). The data encompasses 146,821 inspections.
 
 Inspections are performed by staff from the Chicago Department of Public Health’s Food Protection Program using a standardized
 procedure. The results of the inspection are inputted into a database, then reviewed and approved by a State of Illinois Licensed
-Environmental Health Practitioner. The data is available on [Chicago's open data portal](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5/data).
+Environmental Health Practitioner. The data is available on [Chicago's open data portal](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5/data). A [detailed description](https://data.cityofchicago.org/api/assets/BAD5301B-681A-4202-9D25-51B2CAE672FF) of 
+the variables is also available.
 
 At a meeting of the American Public Health Association, [@schenk2015food] described an [open source project](https://github.com/Chicago/food-inspections-evaluation) in which:
 
@@ -134,6 +140,15 @@ cat_table <- tibble(`Categorical Variables` =
                                          length(unique(City)), length(unique(Zip)), 
                                                 length(unique(`Inspection Type`)),
                                                 length(unique(Results))),
+                   `# NA` = c(sum(is.na(`License #`)),
+                                                   sum(is.na(`DBA Name`)),
+                                                   sum(is.na(`AKA Name`)),
+                                                   sum(is.na(`Facility Type`)),
+                                                   sum(is.na(Risk)),
+                                                   sum(is.na(City)),
+                                                   sum(is.na(Zip)),
+                                                   sum(is.na(`Inspection Type`)),
+                                                   sum(is.na(Results))),
                          `Median inspections per unique value` = c(
                            licence_mipu, lname_mipu, pname_mipu, ftype_mipu,
                            risk_mipu, city_mipu, zip_mipu, itype_mipu, results_mipu),
@@ -178,9 +193,67 @@ cat_table <- tibble(`Categorical Variables` =
                                              calc_anti_mode(Results, TRUE)
                                              )
                    )
+detach(food_inspections)
+kable(cat_table, format = 'markdown')
+```
+Of course, this summary table can only tell us so much. What about where and when these
+inspections take place?
+
+```{r visualization_and_slice}
+# loc_freq <- food_inspections %>%
+#   group_by(Longitude, Latitude) %>%
+#   summarise(freq = sum(freq)) %>%
+#   ungroup()
+
+
+# inspect_loc <- as.data.frame(table(food_inspections$Longitude, food_inspections$Latitude)) %>%
+#   mutate(Longitude = as.numeric(as.character(Var1)), Latitude = as.numeric(as.character(Var2)), freq = n) %>%
+#   select(-c(Var1, Var2, freq)) %>%
+#   filter(freq > 0)
+chicago <- get_map(location = 'chicago', zoom = 11)
+
+ggmap(chicago) +
+    stat_density2d(data = food_inspections,
+                   aes(Longitude, Latitude, alpha = ..level.., fill = ..level..),
+                   geom = "polygon") +
+    geom_density2d(data = food_inspections,
+                   aes(Longitude, Latitude), size = .1) +
+    labs(title = "Heatmap and Levels of Food Inspections (1/1/2010 - 4/13/2017)",
+         fill = "Inspections",
+         y = "Latitude",
+         x = "Longitude") +
+    scale_fill_gradient(low = "blue", high = "red") +
+    scale_alpha(range = c(0, 0.5), guide = FALSE)
+
+food_inspections %>%
+  ggplot(aes(`Inspection Date`, color = factor(Risk))) +
+    geom_freqpoly() +
+    labs(title = "Inspections per 30 days by Facility Risk",
+         color = "Risk (lower is riskier)")
 ```
 
-```{r visualization, results='asis'}
+However, one might also be interested in what facility types typically have higher risk, and in looking at specific years for
+the data.
+There are over 400 facility types, but let's compare restaurants, grocery stores, and schools in 2016:
+```{r condslice}
+cond_slice <- food_inspections %>% 
+  mutate(year = year(`Inspection Date`)) %>%
+  # na.omit() %>%
+  filter(`Facility Type` %in% c("School", "Grocery Store", "Restaurant"),
+         year == 2016) %>%
+  group_by(`Facility Type`, Risk) %>%
+  summarise(count = n()) %>%
+  mutate(prop = count / sum(count)) %>%
+  ungroup()
+
+ggplot(cond_slice, mapping = aes(Risk, prop, fill = `Facility Type`)) +
+  geom_col(position = "dodge") + 
+  labs(title = "Proportion of Risk Group by Facility Type: 2016",
+       y = "Proportion",
+       x = "Risk (lower is riskier)")
 ```
 
-```{r slice, results='asis'}
+Looking at this visualization, around 80% of restaurants and schools inspected in Chicago in 2016 were in the highest risk group (poor kids).
+Also, compared to the timeseries shown above, this visualization tells us that although a risk level of 1 (highest risk) is the most prevalent in the data, that this does not necessarily hold true within individual facility types. Also, along with the first summary table given, one might infer that the reason that risk level 1 food inspections dominate is due to the plurality (~67% of all observations) that restaurants hold in the data. One might expect then, that there are more nuances to tease out. 
+
+---
