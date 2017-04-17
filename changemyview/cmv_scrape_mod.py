@@ -47,6 +47,7 @@ class CMVScraperModder:
         This function gathers the submission IDs for submissions in 
         /r/changemyview
         '''
+        # TODO(jcm): Chunk gathering of submissions.
         init_col_names = ['id', 'author', 'sub_inst']
         sub_df_dict = {col_name: [] for col_name in init_col_names}
 
