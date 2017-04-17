@@ -16,124 +16,19 @@ At a meeting of the American Public Health Association, (Schenk 2015) described 
 
 Making a *single* descriptive statistics table isn't exactly the most helpful thing given that the majority of the variables of categorical with differing numbers of categories, but here you go:
 
-<table style="width:100%;">
-<colgroup>
-<col width="12%" />
-<col width="7%" />
-<col width="3%" />
-<col width="18%" />
-<col width="10%" />
-<col width="16%" />
-<col width="13%" />
-<col width="16%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Categorical Variables</th>
-<th align="right">unique Values</th>
-<th align="right"># NA</th>
-<th align="right">Median inspections per unique value</th>
-<th align="left">Most Frequent Value</th>
-<th align="left">Most Frequent Value Proportion</th>
-<th align="left">Least Frequent Value</th>
-<th align="left">Least Frequent Value Proportion</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">License #</td>
-<td align="right">32028</td>
-<td align="right">14</td>
-<td align="right">3</td>
-<td align="left">0</td>
-<td align="left">0.287%</td>
-<td align="left">1</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="even">
-<td align="left">Legal Name</td>
-<td align="right">24134</td>
-<td align="right">0</td>
-<td align="right">4</td>
-<td align="left">SUBWAY</td>
-<td align="left">1.385%</td>
-<td align="left">1021 MONTROSE</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="odd">
-<td align="left">Public Name</td>
-<td align="right">23071</td>
-<td align="right">2696</td>
-<td align="right">4</td>
-<td align="left">SUBWAY</td>
-<td align="left">1.692%</td>
-<td align="left">1021 MONTROSE</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="even">
-<td align="left">Facility Type</td>
-<td align="right">438</td>
-<td align="right">4540</td>
-<td align="right">4</td>
-<td align="left">Restaurant</td>
-<td align="left">67.599%</td>
-<td align="left">AFTER SCHOOL CARE</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="odd">
-<td align="left">Risk (lower = riskier)</td>
-<td align="right">4</td>
-<td align="right">79</td>
-<td align="right">22302</td>
-<td align="left">1</td>
-<td align="left">69.604%</td>
-<td align="left">3</td>
-<td align="left">9.613%</td>
-</tr>
-<tr class="even">
-<td align="left">City</td>
-<td align="right">51</td>
-<td align="right">150</td>
-<td align="right">2</td>
-<td align="left">CHICAGO</td>
-<td align="left">99.866%</td>
-<td align="left">BLOOMINGDALE</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="odd">
-<td align="left">Zip Code</td>
-<td align="right">100</td>
-<td align="right">98</td>
-<td align="right">1100</td>
-<td align="left">60614</td>
-<td align="left">3.712%</td>
-<td align="left">60018</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="even">
-<td align="left">Inspection Type</td>
-<td align="right">109</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="left">Canvass</td>
-<td align="left">53.233%</td>
-<td align="left">1315 license reinspection</td>
-<td align="left">0.001%</td>
-</tr>
-<tr class="odd">
-<td align="left">Inspection Results</td>
-<td align="right">7</td>
-<td align="right">0</td>
-<td align="right">13407</td>
-<td align="left">Pass</td>
-<td align="left">58.920%</td>
-<td align="left">Business<sub>Not</sub>Located</td>
-<td align="left">0.041%</td>
-</tr>
-</tbody>
-</table>
-
-Of course, this summary table can only tell us so much. What about where and when these inspections take place?
+| Categorical Variables     |     unique Values|    \# NA|     Median inspections per unique value| Most Frequent Value | Most Frequent Value Proportion | Least Frequent Value          | Least Frequent Value Proportion |
+|:--------------------------|-----------------:|--------:|---------------------------------------:|:--------------------|:-------------------------------|:------------------------------|:--------------------------------|
+| License \#                |             32028|       14|                                       3| 0                   | 0.287%                         | 1                             | 0.001%                          |
+| Legal Name                |             24134|        0|                                       4| SUBWAY              | 1.385%                         | 1021 MONTROSE                 | 0.001%                          |
+| Public Name               |             23071|     2696|                                       4| SUBWAY              | 1.692%                         | 1021 MONTROSE                 | 0.001%                          |
+| Facility Type             |               438|     4540|                                       4| Restaurant          | 67.599%                        | AFTER SCHOOL CARE             | 0.001%                          |
+| Risk (lower = riskier)    |                 4|       79|                                   22302| 1                   | 69.604%                        | 3                             | 9.613%                          |
+| City                      |                51|      150|                                       2| CHICAGO             | 99.866%                        | BLOOMINGDALE                  | 0.001%                          |
+| Zip Code                  |               100|       98|                                    1100| 60614               | 3.712%                         | 60018                         | 0.001%                          |
+| Inspection Type           |               109|        1|                                       1| Canvass             | 53.233%                        | 1315 license reinspection     | 0.001%                          |
+| Inspection Results        |                 7|        0|                                   13407| Pass                | 58.920%                        | Business<sub>Not</sub>Located | 0.041%                          |
+| Of course, this summary t |  able can only te|  ll us s|  o much. What about where and when thes| e                   |                                |                               |                                 |
+| inspections take place?   |                  |         |                                        |                     |                                |                               |                                 |
 
 ![](data_descrp_files/figure-markdown_github/visualization_and_slice-1.png)![](data_descrp_files/figure-markdown_github/visualization_and_slice-2.png)
 
