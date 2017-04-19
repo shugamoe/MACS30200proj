@@ -2,12 +2,10 @@
 
 import praw
 import time
-import numpy as np
 from prawcore.exceptions import Forbidden, ServerError
 import os
 import pandas as pd
 import re
-import numpy as numpy
 import time
 import numpy as np
 import pdb
