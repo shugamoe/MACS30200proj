@@ -43,7 +43,7 @@ class CMVScraperModder:
         # If more than a day between start and end break up the date into
         # approximately day sized chunks to avoid 503 error.
         if end - start > 86400:
-            self.date_chunks = np.floor(np.linspace(start, end, num = 
+            self.date_chunks = np.ceiling(np.linspace(start, end, num = 
                 (end - start) / 86401))
 
         # Example instances to to tinker with
@@ -58,9 +58,17 @@ class CMVScraperModder:
         """
         if hasattr(self, "date_chunks"):
             print("Time window too large, gathering submissions in chunks")
-            for i in range(len(self.date_chunks) - 1):
-                date_start = self.date_chunks[i]
-                date_end = self.date_chunks[i + 1] + 1 
+            second_last_index = len(self.date_chunks - 1)
+            for i in range(second_last_index):
+                if i == second_last_index:
+                    date_end = self.date_chunks[i + 1]
+                    date_start = self.date_chunks[i] + 1
+                elif i == 0: 
+                    date_start = self.date_chunks[i]
+                    date_end = self.date_chunks[i]
+                else:
+                    date_start = self.date_chunks[i] + 1
+                    date_end = self.date_chunks[i + 1] + 1 
                 
                 date_start_string = (
                 time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_start)))
@@ -75,14 +83,12 @@ class CMVScraperModder:
         else:
             self._get_submissions_between(self.date_start, self.date_end)
 
-    def _get_submissions_between(self, start, end):
+    def _get_submissions_between(self, date_start, date_end):
         """
         """
         sub_df_dict = {col_name: [] for col_name in self.INIT_SUB_COL_NAMES}
 
-        subs_gathered = 0
-        for sub in self.subreddit.submissions(self.date_start, 
-                self.date_end):
+        for sub in self.subreddit.submissions(date_start, date_end):
             subs_gathered += 1
             sub_df_dict["author"].append(str(sub.author))
             sub_df_dict["id"].append(sub.id)
@@ -91,6 +97,7 @@ class CMVScraperModder:
         df = pd.DataFrame(sub_df_dict)
         if hasattr(self, "cmv_subs"):
             df.set_index("id", drop=False, inplace=True)
+            self.cmv_subs.merge(df, on="id")
         else:
             self.cmv_subs = df.set_index("id", drop=False)
 
