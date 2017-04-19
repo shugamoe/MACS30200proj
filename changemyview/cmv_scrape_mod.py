@@ -3,7 +3,7 @@
 import praw
 import time
 import numpy as np
-from prawcore.exceptions import Forbidden
+from prawcore.exceptions import Forbidden, ServerError
 import os
 import pandas as pd
 import re
@@ -18,6 +18,15 @@ START_2013 = 1356998400
 
 START_BDAY_2016 = 1461110400
 END_BDAY_2016 = 1461130000
+
+
+def can_fail(praw_call):
+    """
+    A decorator to handle praw calls that can encounter sever errors
+    """
+    def robust_praw_call():
+        pass
+     
 
 
 class CMVScraperModder:
@@ -43,7 +52,7 @@ class CMVScraperModder:
         # If more than a day between start and end break up the date into
         # approximately day sized chunks to avoid 503 error.
         if end - start > 86400:
-            self.date_chunks = np.ceiling(np.linspace(start, end, num = 
+            self.date_chunks = np.ceil(np.linspace(start, end, num = 
                 (end - start) / 86401))
 
         # Example instances to to tinker with
