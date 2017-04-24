@@ -1,0 +1,53 @@
+---
+title: "Literature Review"
+author: "Julian McClellan"
+date: "Due 4/22/17"
+output:
+  pdf_document:
+    includes:
+      in_header:
+        header.tex
+fontsize: 12pt
+bibliography: citations.bib
+---
+## Persuasion
+
+Persuasion, a goal in a number of settings, from political and marketing campaigns to friendly or professional conversations, has been the subject of significant research efforts [@tan2016winning; @dillard2002persuasion]. Before the advent of social media websites like Facebook or Reddit, these research efforts were mostly confined to laboratory settings, but thanks to the increasing number of social interactions online, interpersonal persuasion has become observable on a massive scale [@fogg2008mass].
+
+Tan et al. explored persuasion in /r/changemyview (CMV), an area of the popular social media website Reddit [-@tan2016winning]. CMV is particularly conducive to the study of mass interpersonal persuasion, as posters must state the reasoning behind their views, and successful arguments must be awarded with explicit confirmation. Thus, the outcome of the persuasion efforts, reasoning behind people's views, and the full interactions are accessible. 
+
+With access to this information, Tan et al. focused primarily on how interaction dynamics and choice of language within arguments were associated with a successful change in someone's opinion. A third focus of the study was an attempt to determine the malleability of an opinion, i.e. the likelihood that the holder of that opinion would award successful arguments to change it. Assuming that at least 10 unique challengers to the opinion were present, and that the holder of the opinion responded at least once, Tan et al. analyzed the way in which the opinion was presented and attempted to predict whether or not it could be changed.
+
+This last task, attempting to determine the malleability of an opinion without respect to any of the arguments attempting to change it, was difficult indeed, and Tan et al. only achieved an ROC AUC of .54. Still, using weighted logistic regression, they found some significant features consistent with self-affirmation theory [@cohen2000beliefs; @correll2004affirmed].
+
+## Self-Affirmation Theory
+
+> "[S]elf-affirmation theory . . . suggests that every person strives for positive self-regard and, to achieve it, draws on successes in important domains in her or his life. These domains constitute aspects of individual identity, including important social roles, abilities, and beliefs. Because the individual depends on a constellation of domains for feelings of adequacy, a threat to one of the domains can prompt a defensive reaction. A crucial tenet of self-affirmation theory, though, is that the ultimate goal of a defensive reaction is the security of the global sense of self-worth, no the security of the domain, per se. The individual should defend a given domain only to the degree that the more general sense of self-worth is compromised by its loss."
+
+[@correll2004affirmed]
+
+In psychology, self-affirmation, which can be thought to reinforce one's global sense of self-worth, has been found to indicate open-mindedness and make beliefs more likely to yield [@correll2004affirmed; @cohen2000beliefs].
+
+Tan et al. found that within the text of an opinion, the use of first person pronouns were strong indicators of malleability, but first person plural pronouns correlated with resistance.
+
+> "[I]ndividualizing one's relationship with a belief using the first person pronouns affirms the self, while first person plurals can indicate a dilluted sense of group responsibility for the view."
+
+[@tan2016winning]
+
+While Tan et al. attempted to derive the level of self-affirmation present within the stating of an opinion, the user stating that opinion can have other sources of self-affirmation. Returning to Correll:
+
+> "[I]f global self-worth is temporarily bolstered by success in a second, unrelated domain, the individual should be more willing to tolerate a threat to the domain of interest."
+
+Looking at the wording of the opinion itself is a related domain, but it is reasonable to assume that if a Redditor has previous submission and comment history, that some of that history is unrelated to the opinion they are presenting for change in CMV. Additionally, self-affirmation theory does not restrict the source of bolstering one's global self-worth; it can be self-affirmation or affirmation from third parties. 
+
+Thus, within past submissions and comments one can look at the same features as Tan et al., first person singular and plural pronouns for self-affirmation, but also for features that are indicative of third party affirmation, like the score, given by other users, of the comment or submission in question.
+
+All of a Reddit user's past submission history is available for perusal, as well as 1000 of the most recent, top-scoring, "hottest", and most "controversial" comments. Exploring the affirming nature of this history allows a deeper testing of self-affirmation theory, as a lab experiment can only really test the history created within the lab settings itself. Cohen et. al (2000), for example. . . 
+
+> [A]sked half of their participants to write a paragraph about an important value (to affirm their sense of self-worth) before exposing them to arguments that challenged their views on capital punishment or abortion. Compared with control participants who wrote about less important values, those who wrote about a central value were more willing to recognize the strengths of the challenging argument.
+
+Utilizing a Reddit user's past submission and comment history, on the other hand, not only allows a more extended look into instances in which self and third party affirmation may have occurred, but it also provides instances of participation with the community that the view is being exposed to. If a Reddit user posited their opinion to CMV, but also had previous submissions and comments within the CMV community, then that participation would be relevant, but previous participation in other subreddits can also be more or less relevant as well. CMV does not establish any barriers (besides following the subreddit rules), against first-time participation from other Reddit users new to CMV. If a user posts an opinion on CMV, but has also attempted to change an opinion on CMV, then it's possible that these attempts may or may not have changed the view (receiving or not receiving explicit recognition). Looking at past participation within CMV, a notion of reciprocity might be present; users who have had their comments awarded for changing other opinions might be more yielding with their own comments.
+
+Tan et al. extended self-affirmation theory as it was onto an online debate space. Utilizing an opinion author's past interactions in CMV can possibly extend self-affirmation theory itself, by looking further back in time to potential affirmation, but also shed more light on the unique characterstics of Reddit and CMV in general
+
+---
