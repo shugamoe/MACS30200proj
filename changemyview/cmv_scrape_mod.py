@@ -1,15 +1,14 @@
 # Scraper for /r/changemyview data
 
-import praw
-import time
-from prawcore.exceptions import Forbidden, ServerError
 import os
-import pandas as pd
-import re
 import time
-import numpy as np
-import pdb
+import re
 import pickle
+import numpy as np
+import pandas as pd
+import praw
+import pdb
+from prawcore.exceptions import Forbidden, ServerError
 
 END_2016 = 1483228800
 START_2013 = 1356998400
@@ -184,6 +183,7 @@ class CMVScraperModder:
     def _get_author_history(self, author):
         """
         """
+        print("Retrieving history for: {}".format(author))
         SubAuthor = CMVSubAuthor(self.praw_agent.redditor(author))
         SubAuthor.get_history_for("comments")
         SubAuthor.get_history_for("submissions")
@@ -212,10 +212,10 @@ class CMVScraperModder:
 
         sub_inst_series[sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
                 sub_inst_series["sub_inst"].apply(
-                    lambda sub_inst: CMVAuthSubmission(sub_inst).get_stats_series()
-                ))
-        self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series, on=
-                "sub_inst")
+                    lambda sub_inst: CMVAuthSubmission(sub_inst)
+                    .get_stats_series()))
+        self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series,
+                on="sub_inst")
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
 
         # Update Comments
@@ -226,8 +226,8 @@ class CMVScraperModder:
                 lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
             ))
         print("Comment stats extracted")
-        self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series, on=
-                "com_inst")
+        self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series,
+                on="com_inst")
         self.cmv_author_coms.drop_duplicates(subset="com_id", inplace=True)
         print("Stats merged")
 
@@ -275,7 +275,7 @@ class CMVSubmission:
 
         for com in comment_tree:
             if isinstance(com, praw.models.MoreComments):
-                self.parse_root_comments(comment_tree.comments())
+                self.parse_root_comments(com.comments())
             elif com.stickied:
                 continue # Sticked comments are not replies to view
             else:
@@ -334,7 +334,9 @@ class CMVSubAuthor:
     STATS_TEMPLATE = {"sub_id": [],
                      "com_id": [],
                      "sub_inst": [],
-                     "com_inst": []}
+                     "com_inst": [],
+                     "com_newest": []}
+
 
     def __init__(self, redditor_inst):
         """
@@ -359,9 +361,11 @@ class CMVSubAuthor:
             posts_retrieved += 1
             self.history[post_prefix + "_id"].append(post.id)
             self.history[post_prefix + "_inst"].append(post)
+            if post_prefix == "com":
+                self.history["com_newest"].append(True)
 
         if posts_retrieved in  [999, 1000]:
-            print("999 or 1000 {} retrieved exactly,"
+            print("\t999 or 1000 {} retrieved exactly,"
                 " attempting to retrive more for {}.".format(
                     post_type, self.user_name))
             self.get_more_history_for(post_prefix, post_type,
@@ -370,7 +374,7 @@ class CMVSubAuthor:
             print("{} {} retrieved, don't have to worry about comment limit".format(
                 posts_retrieved, post_type))
         else:
-            print("{} {} retrieved for {}".format(posts_retrieved,
+            print("\t{} {} retrieved for {}".format(posts_retrieved,
                 post_type, self.user_name))
 
     @can_fail
@@ -388,6 +392,8 @@ class CMVSubAuthor:
                     new_posts_found += 1
                     self.history[post_prefix + "_id"].append(post.id)
                     self.history[post_prefix + "_inst"].append(post)
+                    if post_prefix == "com":
+                        self.history["com_newest"].append(False)
                 else:
                     same_posts_found += 1
         
@@ -412,6 +418,7 @@ class CMVSubAuthor:
 class CMVAuthSubmission:
     """
     """
+    COMS_PARSED = 0
     STATS_TEMPLATE = {"created_utc": None,
                      "score": None,
                      "subreddit": None,
@@ -434,7 +441,7 @@ class CMVAuthSubmission:
         self.stats["subreddit"] = self.submission.subreddit_name_prefixed
         self.stats["content"] = self.submission.selftext
         
-        self.parse_root_comments()
+        self.parse_root_comments(self.submission.comments)
         self.num_unique_users = len(self.unique_users)
         self.parsed = True
 
@@ -442,20 +449,18 @@ class CMVAuthSubmission:
     def parse_root_comments(self, comment_tree=None):
         """
         """
-        # pdb.set_trace()
-        time.sleep(1)
-        if not comment_tree:
-            comment_tree = self.submission.comments
+        # if str(self.submission) == "5d3bj5":
+            # pdb.set_trace()
 
         for com in comment_tree:
+            self.COMS_PARSED += 1
             if isinstance(com, praw.models.MoreComments):
-                self.parse_root_comments(comment_tree.comments())
+                self.parse_root_comments(com.comments())
             elif com.stickied:
                 continue # Sticked comments are not replies to view
             else:
                 self.stats["num_user_comments"] += 1
                 self.stats["num_root_comments"] += 1
-                
                 try:
                     com_author = com.author.name
                 except AttributeError: # If author is None, then user is deleted
@@ -541,7 +546,6 @@ class CMVAuthComment:
     def get_stats_series(self):
         """
         """
-        print("Merging comment Stats")
         info_series = pd.Series(self.stats)
         info_series.sort_index(inplace = True)
         return(info_series)
