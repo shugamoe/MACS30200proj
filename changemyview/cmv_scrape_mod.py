@@ -18,12 +18,34 @@ START_BDAY_2016 = 1461110400
 END_BDAY_2016 = 1461130000
 
 
-def can_fail(praw_call):
+def can_fail(praw_call, *args, **kwargs):
     """
     A decorator to handle praw calls that can encounter sever errors
     """
-    def robust_praw_call():
-        pass
+    # pdb.set_trace()
+    def robust_praw_call(self, *args, **kwargs):
+        call_successful = False
+        sleep_time = 120 # Wait 2 minutes if initial call fails
+        while not call_successful:
+            try:
+                praw_call(self, *args, **kwargs)
+                call_successful = True
+            except Forbidden:
+                # TODO(jcm): Weird bug. "X was suspended" prints twice.
+                print("{} was suspended".format(self.user_name))
+                call_successful = True
+            except Exception as e:
+                print("\n\t{}".format(str(e)))
+                print("\tTrying: {}".format(praw_call.__name__))
+                print("\tWill now wait {} seconds before pinging server again".format(
+                    sleep_time))
+                ping_time = time.strftime("%m/%d %H:%M:%S", time.localtime(
+                    sleep_time + time.mktime(time.localtime())))
+                print("\tServer ping at: {}".format(ping_time))
+                time.sleep(sleep_time)
+                sleep_time += 60
+
+    return(robust_praw_call)
      
 
 
@@ -51,13 +73,14 @@ class CMVScraperModder:
         # approximately day sized chunks to avoid 503 error.
         if end - start > 86400:
             self.date_chunks = np.ceil(np.linspace(start, end, num = 
-                (end - start) / 86401))
+                (end - start) / 85400))
 
         # Example instances to to tinker with
         self.eg_submission = self.praw_agent.submission("5kgxsz")
         self.eg_comment = self.praw_agent.comment("cr2jp5a")
         self.eg_user = self.praw_agent.redditor("RocketCity1234")
-
+    
+    @can_fail
     def get_all_submissions(self):
         """
         This function gathers the submission IDs for submissions in 
@@ -67,16 +90,13 @@ class CMVScraperModder:
             print("Time window too large, gathering submissions in chunks")
             second_last_index = len(self.date_chunks - 1)
             for i in range(second_last_index):
-                if i == second_last_index:
-                    date_end = self.date_chunks[i + 1]
-                    date_start = self.date_chunks[i] + 1
-                elif i == 0: 
+                if i == 0: 
                     date_start = self.date_chunks[i]
-                    date_end = self.date_chunks[i]
+                    date_end = self.date_chunks[i + 1]
                 else:
                     date_start = self.date_chunks[i] + 1
-                    date_end = self.date_chunks[i + 1] + 1 
-                
+                    date_end = self.date_chunks[i + 1] 
+                   
                 date_start_string = (
                 time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_start)))
                 date_end_string = (
@@ -90,14 +110,19 @@ class CMVScraperModder:
         else:
             self._get_submissions_between(self.date_start, self.date_end)
 
+    @can_fail
     def _get_submissions_between(self, date_start, date_end):
         """
         """
         sub_df_dict = {col_name: [] for col_name in self.INIT_SUB_COL_NAMES}
-
+        
         for sub in self.subreddit.submissions(date_start, date_end):
-            subs_gathered += 1
-            sub_df_dict["author"].append(str(sub.author))
+
+            try:
+                sub_df_dict["author"].append(sub.author.name)
+            except AttributeError: # If author is None, then user is deleted
+                sub_df_dict["author"].append("[deleted]")
+
             sub_df_dict["id"].append(sub.id)
             sub_df_dict["sub_inst"].append(sub)
         
@@ -160,12 +185,8 @@ class CMVScraperModder:
         """
         """
         SubAuthor = CMVSubAuthor(self.praw_agent.redditor(author))
-        try:
-            SubAuthor.get_history_for("comments")
-            SubAuthor.get_history_for("submissions")
-        except Forbidden:
-            print("{} was suspended".format(author))
-            return(None)
+        SubAuthor.get_history_for("comments")
+        SubAuthor.get_history_for("submissions")
         
         if hasattr(self, "cmv_author_coms"):
             self.cmv_author_coms= self.cmv_author_coms.append(
@@ -238,13 +259,14 @@ class CMVSubmission:
 
     def __init__(self, sub_inst):
         self.submission = sub_inst
-        self.author = str(self.submission.author)
+        self.author = self.submission.author.name
 
         # Important Variables to track
         self.stats = self.STATS_TEMPLATE
 
         self.parsed = False 
-
+    
+    @can_fail
     def parse_root_comments(self, comment_tree=None):
         """
         """
@@ -263,6 +285,7 @@ class CMVSubmission:
 
         self.parsed = True
 
+    @can_fail
     def parse_replies(self, reply_tree):
         """
         """
@@ -274,6 +297,7 @@ class CMVSubmission:
             else:
                 self.stats["num_user_comments"] += 1
 
+    @can_fail
     def parse_delta_bot_comment(self, comment):
         """
         """
@@ -285,7 +309,7 @@ class CMVSubmission:
             # actually responded to a comment and not a submission.
             # (Submission are always by OP, comments are not.)
             if isinstance(parent_com, praw.models.Comment):
-                if str(parent_com.author) == self.author:
+                if parent_com.author.name == self.author:
                     self.stats["OP_gave_delta"] = True
                     self.stats["num_deltas_from_OP"] += 1
 
@@ -316,11 +340,12 @@ class CMVSubAuthor:
         """
         """
         self.user = redditor_inst
-        self.user_name = str(redditor_inst.name)
+        self.user_name = redditor_inst.name
 
         # Important variables to track
         self.history = self.STATS_TEMPLATE
-
+    
+    @can_fail
     def get_history_for(self, post_type):
         """
         """
@@ -335,9 +360,8 @@ class CMVSubAuthor:
             self.history[post_prefix + "_id"].append(post.id)
             self.history[post_prefix + "_inst"].append(post)
 
-        # pdb.set_trace()
-        if posts_retrieved == 1000:
-            print("1000 {} retrieved exactly,"
+        if posts_retrieved in  [999, 1000]:
+            print("999 or 1000 {} retrieved exactly,"
                 " attempting to retrive more for {}.".format(
                     post_type, self.user_name))
             self.get_more_history_for(post_prefix, post_type,
@@ -349,6 +373,7 @@ class CMVSubAuthor:
             print("{} {} retrieved for {}".format(posts_retrieved,
                 post_type, self.user_name))
 
+    @can_fail
     def get_more_history_for(self, post_prefix, post_type, post_generator):
         """
         """
@@ -369,7 +394,7 @@ class CMVSubAuthor:
         if new_posts_found == 3000:
             print("Maximum number (3000) of new [] found".format(post_type))
         else:
-            print("{} new and {} same {} found".format(new_posts_found,
+            print("\t{} new and {} same {} found".format(new_posts_found,
                 same_posts_found, post_type))
 
     def get_post_df(self, post_type):
@@ -383,26 +408,76 @@ class CMVSubAuthor:
         attribution_dict.update({"author": self.user_name})
         return(pd.DataFrame(attribution_dict))
 
-# TODO(jcm): Make CMVSubmission inherit from CMVAuthSubmission
+# TODO(jcm): Make CMVSubmission inherit from CMVAuthSubmission(?)
 class CMVAuthSubmission:
     """
     """
     STATS_TEMPLATE = {"created_utc": None,
                      "score": None,
                      "subreddit": None,
-                     "content": None}
+                     "content": None,
+                     "num_root_comments": 0,
+                     "num_user_comments": 0,
+                     "num_unique_users": 0,
+                     "has_deleted_user": False}
+    @can_fail
     def __init__(self, submission_inst):
         """
         """
         self.submission = submission_inst
         self.stats = self.STATS_TEMPLATE
-        self.parsed = True
+        self.unique_users = set()
 
         # Stats that can be gathered right off the bat
         self.stats["created_utc"] = self.submission.created_utc
         self.stats["score"] = self.submission.score
         self.stats["subreddit"] = self.submission.subreddit_name_prefixed
         self.stats["content"] = self.submission.selftext
+        
+        self.parse_root_comments()
+        self.num_unique_users = len(self.unique_users)
+        self.parsed = True
+
+    @can_fail
+    def parse_root_comments(self, comment_tree=None):
+        """
+        """
+        # pdb.set_trace()
+        time.sleep(1)
+        if not comment_tree:
+            comment_tree = self.submission.comments
+
+        for com in comment_tree:
+            if isinstance(com, praw.models.MoreComments):
+                self.parse_root_comments(comment_tree.comments())
+            elif com.stickied:
+                continue # Sticked comments are not replies to view
+            else:
+                self.stats["num_user_comments"] += 1
+                self.stats["num_root_comments"] += 1
+                
+                try:
+                    com_author = com.author.name
+                except AttributeError: # If author is None, then user is deleted
+                    self.stats["has_deleted_user"] = True
+                    com_author = "[deleted]"
+                self.unique_users.add(com_author)
+                self.parse_replies(com.replies)
+
+    @can_fail
+    def parse_replies(self, reply_tree):
+        """
+        """
+        reply_tree.replace_more(limit=None)
+
+        for reply in reply_tree.list():
+            self.stats["num_user_comments"] += 1
+            try:
+                reply_author = reply.author.name
+            except AttributeError: # If author is None, then user is deleted
+                self.stats["has_deleted_user"] = True
+                reply_author = "[deleted]"
+            self.unique_users.add(reply_author)
 
     def get_stats_series(self):
         """
@@ -420,14 +495,19 @@ class CMVAuthComment:
     STATS_TEMPLATE = {"created_utc": None,
                       "score": None,
                       "subreddit": None,
-                      "content": None}
+                      "content": None,
+                      "edited": None, 
+                      "num_replies": 0,
+                      "parent_submission": None,
+                      "parent_comment": False}
 
+    @can_fail
     def __init__(self, comment_inst):
         """
         """
         self.comment = comment_inst
         self.stats = self.STATS_TEMPLATE
-        self.parsed = True
+        self.unique_users = set()
 
         # Stats that can be gathered right away
         self.stats["created_utc"] = self.comment.created_utc 
@@ -435,6 +515,28 @@ class CMVAuthComment:
         self.stats["subreddit"] = (self.comment.
                 submission.subreddit_name_prefixed)
         self.stats["content"] = self.comment.body
+        self.stats["edited"] = self.comment.edited
+        self.stats["parent_submission"] = self.comment.submission
+        self.stats["parent_comment"] = self.comment.parent()
+
+        self.parse_replies(comment_inst.replies)
+        self.stats["num_unique_users"] = len(self.unique_users)
+        self.parsed = True
+
+    @can_fail
+    def parse_replies(self, reply_tree):
+        """
+        """
+        reply_tree.replace_more(limit=None)
+
+        for reply in reply_tree.list():
+            self.stats["num_user_comments"] += 1
+            try:
+                reply_author = reply.author.name
+            except AttributeError: # If author is None, then user is deleted
+                self.stats["has_deleted_user"] = True
+                reply_author = "[deleted]"
+            self.unique_users.add(reply_author)
 
     def get_stats_series(self):
         """
