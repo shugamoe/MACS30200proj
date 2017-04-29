@@ -87,7 +87,7 @@ class CMVScraperModder:
         """
         if hasattr(self, "date_chunks"):
             print("Time window too large, gathering submissions in chunks")
-            second_last_index = len(self.date_chunks - 1)
+            second_last_index = len(self.date_chunks - 2)
             for i in range(second_last_index):
                 if i == 0: 
                     date_start = self.date_chunks[i]
@@ -229,7 +229,7 @@ class CMVScraperModder:
         self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series,
                 on="com_inst")
         self.cmv_author_coms.drop_duplicates(subset="com_id", inplace=True)
-        print("Stats merged")
+        print("Comment stats merged")
 
     @staticmethod
     def make_output_dir(dir_name):
