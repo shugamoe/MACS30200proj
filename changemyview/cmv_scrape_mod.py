@@ -87,7 +87,7 @@ class CMVScraperModder:
         """
         if hasattr(self, "date_chunks"):
             print("Time window too large, gathering submissions in chunks")
-            second_last_index = len(self.date_chunks - 2)
+            second_last_index = len(self.date_chunks) - 2
             for i in range(second_last_index):
                 if i == 0: 
                     date_start = self.date_chunks[i]
@@ -552,7 +552,7 @@ class CMVAuthComment:
 
     
 if __name__ == "__main__":
-    SModder = CMVScraperModder(START_BDAY_2016, END_BDAY_2016)
+    SModder = CMVScraperModder(START_2013, END_2016)
 
     SModder.update_cmv_submissions()
     SModder.update_author_history()
