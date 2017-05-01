@@ -19,9 +19,14 @@ knitr::opts_chunk$set(message = FALSE,
 
 ### (a) State the Research question
 
-The research question is:
+This paper  seeks to answer a *general question*:
 
-"How did Republicans respond to the drastic change in intstitutional and electoral context after the 2008 election?"
+"How do House Representatives define the type of representation they provide to constituents?"
+
+With this specific research question in mind, the paper can answer *more specifically*:
+
+"In regards to the type of representation they provide to constituents, how did House Republicans respond to the drastic change in intstitutional and electoral context after the 2008 election?"
+
 
 ### (b) What data did the paper use?
 
@@ -40,7 +45,7 @@ to send to newspapers, and in distributing messages directly to their constituen
 (Yiannakis, 1982; Quinn et al., 2010; Lipinski, 2004; Grimmer, 2013). 
 
 Grimmer references two of his own works to justify his methods. One references is to the general method he uses,
-a *text as data* method [@grimmerstewart2013], and another references the specific method he uses on the press releases, a Bayseian hierarchical model for political texts that he had previously used on Senate press releases to measure legislators' expressed priorities: the attention they allocate to topics and issues when comminicating to constituents [@grimmer2010].
+a *text as data* method [@grimmerstewart2013], and another references the specific method he uses on the press releases, a Bayseian hierarchical model for political texts that he had previously used on Senate press releases to measure legislators' expressed priorities: the attention they allocate to topics and issues when comminicating to constituents [@grimmer2010]. Grimmer also generally cites the use of topic models as increasingly common tools for studying large bodies of text.
 
 Additionally, Grimmer also justifies the source of the texts he has chosen for analysis:
 
@@ -54,5 +59,30 @@ a direct effect over the content of newspaper stories and constituent evaluation
 numerical solution to system of equations study, or some combination of
 the three?
 
-One the one hand, Grimmer utilizes hierarchical modelling, an unsupervised method, on the 2005-2010 House press releases as a means of reducing the dimensionality of more succinctly describing the information contained in the press releases.
+One the one hand, Grimmer's paper has aspects of a descriptive study. Returning to the more general research question, the paper seeks to *describe* how House Representatives represent themselves to constituents. 
 
+It utilizes hierarchical modelling, an unsupervised method, on the 2005-2010 House press releases as a means of reducing the dimensionality of more succinctly describing the information contained in the press releases. Grimmer labeled topics by reading a small selection of press releases that were grouped together, and then validated them by checking to see timelines of the topics, and whether the "spikes" in the topics made sense. For example, financial crisis topics spiked around the financial crisis, as expected. Grimmer also checked the output of the model against human coding; for the "coarse" topic "credit claiming", numbers of documents for each legislator that were labeled credit claiming correlated highly (.93) with the numbers attained from human coders. 
+
+However, with this description in mind, Grimmer than goes on to carry out something more in line with an identification study, seeing how the press releases changed in response to changing electoral and institutional pressures (loss of majorities to Democrats, election of Obama, etc.).
+
+### (e)  What computational methods did this paper use to answer the research question? What was their result or answer to the question? 
+
+As mentioned above, Grimmer utilized a hierarchical topic model with 8 coarse topics (think branches), with 44 total granular topics (think leaves). The topics are then manually labeled, with validation procedures to make sure that these labels are appropriate. With these topics, the paper answers the more general research question.
+
+Then the paper seeks to answer the more specific research question by identifying electoral and institutional pressures that occurred during the span of time of the press releases, and seeing how the distribution of these topics changed over time for political parties. See below:
+
+![](/home/jmcclellan/MACS30200proj/ProblemSets/PS2/grimmer_results.png)
+
+From here, we see that after the 2008 presidential election, Republicans released fewer credit claiming press releases (while Democrats engage in more), and instead released more press releases concerning health reform, the budget, and the president. Grimmer asserts that the Republican increases in the 3 aforementioned areas are criticisms of presidential policy, citing exerpts from a few press releases as an example.
+
+However, citing himself again, Grimmer notes:
+
+>  But the response is on the margin and a deviation from a longer run strategy that legislators develop over the course of their career (Grimmer, 2013). And as a result, there remains a strong over time relationship in legislators’ expressed priorities.
+
+Thus, the change is less characterized as an "about-face" and more as an adjustment to a changing reality.
+
+### (f) Give two suggestions to the author of the paper of things the authors might do to improve their results or strengthen their evidence for the answer to the question.
+
+#### Suggestion 1:
+
+As mentioned before Grimmer utilizes 
