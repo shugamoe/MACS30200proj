@@ -1,0 +1,58 @@
+---
+title: "Perspectives Research Problem Set 2"
+author: "Julian McClellan"
+date: "Due 4/19/17"
+output:
+  pdf_document:
+    includes:
+      in_header: header.tex
+bibliography: citations.bib
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE,
+                      echo = FALSE)
+```
+
+## Measuring Representational Style in the House: The Tea Party, Obama and Legislators’ Changing Expressed Priorities
+
+### (a) State the Research question
+
+The research question is:
+
+"How did Republicans respond to the drastic change in intstitutional and electoral context after the 2008 election?"
+
+### (b) What data did the paper use?
+
+From Grimmer [-@grimmer2014] himself:
+
+> I use a collection of nearly 170,000
+House press releases: every press release, from each House office, from 2005 to 2010.
+
+### (c) What theory was referenced in order to interpret the data?  
+
+Generally, Grimmer asserts the importance of Congressional communication:
+
+> Communication is a central component of representation (Mansbridge, 2003; Disch, 2012).
+Legislators invest time and resources in crafting speeches in Congress, composing press releases
+to send to newspapers, and in distributing messages directly to their constituents
+(Yiannakis, 1982; Quinn et al., 2010; Lipinski, 2004; Grimmer, 2013). 
+
+Grimmer references two of his own works to justify his methods. One references is to the general method he uses,
+a *text as data* method [@grimmerstewart2013], and another references the specific method he uses on the press releases, a Bayseian hierarchical model for political texts that he had previously used on Senate press releases to measure legislators' expressed priorities: the attention they allocate to topics and issues when comminicating to constituents [@grimmer2010].
+
+Additionally, Grimmer also justifies the source of the texts he has chosen for analysis:
+
+> There
+is increasing evidence that press releases are a reliable and useful source for capturing how
+legislators communicate with their constituents. Grimmer [-@grimmer2013] shows that press releases
+contain politically relevant content not found in floor speeches and that press releases have
+a direct effect over the content of newspaper stories and constituent evaluations.
+
+### (d) Was the paper a descriptive study, an identification exercise, a
+numerical solution to system of equations study, or some combination of
+the three?
+
+One the one hand, Grimmer utilizes hierarchical modelling, an unsupervised method, on the 2005-2010 House press releases as a means of reducing the dimensionality of more succinctly describing the information contained in the press releases.
+
