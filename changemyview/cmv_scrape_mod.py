@@ -116,7 +116,6 @@ class CMVScraperModder:
         sub_df_dict = {col_name: [] for col_name in self.INIT_SUB_COL_NAMES}
         
         for sub in self.subreddit.submissions(date_start, date_end):
-
             try:
                 sub_df_dict["author"].append(sub.author.name)
             except AttributeError: # If author is None, then user is deleted
@@ -128,7 +127,7 @@ class CMVScraperModder:
         df = pd.DataFrame(sub_df_dict)
         if hasattr(self, "cmv_subs"):
             df.set_index("id", drop=False, inplace=True)
-            self.cmv_subs.merge(df, on="id")
+            self.cmv_subs = self.cmv_subs.merge(df, on="id", copy=False)
         else:
             self.cmv_subs = df.set_index("id", drop=False)
 
@@ -153,7 +152,7 @@ class CMVScraperModder:
 
         # TODO(jcm): Get index matching without column duplication working, 
         # matching objects is slower than matching strings
-        self.cmv_subs = all_subs.merge(valid_subs, on="sub_inst")
+        self.cmv_subs = all_subs.merge(valid_subs, on="sub_inst", copy=False)
 
     def _get_sub_info(self, sub_inst):
         """
@@ -215,7 +214,7 @@ class CMVScraperModder:
                     lambda sub_inst: CMVAuthSubmission(sub_inst)
                     .get_stats_series()))
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series,
-                on="sub_inst")
+                on="sub_inst", copy=False)
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
 
         # Update Comments
@@ -227,7 +226,7 @@ class CMVScraperModder:
             ))
         print("Comment stats extracted")
         self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series,
-                on="com_inst")
+                on="com_inst", copy=False)
         self.cmv_author_coms.drop_duplicates(subset="com_id", inplace=True)
         print("Comment stats merged")
 
