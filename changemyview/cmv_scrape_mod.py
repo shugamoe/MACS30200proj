@@ -96,12 +96,6 @@ class CMVScraperModder:
                     date_start = self.date_chunks[i] + 1
                     date_end = self.date_chunks[i + 1] 
                    
-                date_start_string = (
-                time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_start)))
-                date_end_string = (
-                time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_end)))
-                print("Gathering {} to {}".format(date_start_string, 
-                    date_end_string))
 
                 self._get_submissions_between(date_start, date_end)
             num_subs_gathered = len(self.cmv_subs)
@@ -113,6 +107,12 @@ class CMVScraperModder:
     def _get_submissions_between(self, date_start, date_end):
         """
         """
+        date_start_string = (
+                time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_start)))
+        date_end_string = (
+                time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_end)))
+        print("Gathering {} to {}".format(date_start_string, 
+                    date_end_string))
         sub_df_dict = {col_name: [] for col_name in self.INIT_SUB_COL_NAMES}
         
         for sub in self.subreddit.submissions(date_start, date_end):
@@ -123,11 +123,11 @@ class CMVScraperModder:
 
             sub_df_dict["id"].append(sub.id)
             sub_df_dict["sub_inst"].append(sub)
-        
+
         df = pd.DataFrame(sub_df_dict)
         if hasattr(self, "cmv_subs"):
             df.set_index("id", drop=False, inplace=True)
-            self.cmv_subs = self.cmv_subs.merge(df, on="id", copy=False)
+            self.cmv_subs = self.cmv_subs.append(df)
         else:
             self.cmv_subs = df.set_index("id", drop=False)
 
