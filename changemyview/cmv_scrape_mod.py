@@ -291,9 +291,12 @@ class CMVSubmission:
         reply_tree.replace_more(limit=None)
 
         for reply in reply_tree.list():
-            if str(reply.author) == "DeltaBot":
-                self.parse_delta_bot_comment(reply)
-            else:
+            try:
+                if str(reply.author) == "DeltaBot":
+                    self.parse_delta_bot_comment(reply)
+                else:
+                    self.stats["num_user_comments"] += 1
+            except AttributeError: # If author is None, then user is deleted
                 self.stats["num_user_comments"] += 1
 
     @can_fail
