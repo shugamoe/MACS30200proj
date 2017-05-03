@@ -25,7 +25,7 @@ This paper  seeks to answer a *general question*:
 
 With this specific research question in mind, the paper can answer *more specifically*:
 
-"In regards to the type of representation they provide to constituents, how did House Republicans respond to the drastic change in intstitutional and electoral context after the 2008 election?"
+"In regards to the type of representation they provide to constituents, how did House Republicans respond to the drastic change in institutional and electoral context after the 2008 election?"
 
 
 ### (b) What data did the paper use?
@@ -45,7 +45,7 @@ to send to newspapers, and in distributing messages directly to their constituen
 (Yiannakis, 1982; Quinn et al., 2010; Lipinski, 2004; Grimmer, 2013). 
 
 Grimmer references two of his own works to justify his methods. One references is to the general method he uses,
-a *text as data* method [@grimmerstewart2013], and another references the specific method he uses on the press releases, a Bayseian hierarchical model for political texts that he had previously used on Senate press releases to measure legislators' expressed priorities: the attention they allocate to topics and issues when comminicating to constituents [@grimmer2010]. Grimmer also generally cites the use of topic models as increasingly common tools for studying large bodies of text.
+a *text as data* method [@grimmerstewart2013], and another references the specific method he uses on the press releases, a Bayesian hierarchical model for political texts that he had previously used on Senate press releases to measure legislators' expressed priorities: the attention they allocate to topics and issues when communicating to constituents [@grimmer2010]. Grimmer also generally cites the use of topic models as increasingly common tools for studying large bodies of text.
 
 Additionally, Grimmer also justifies the source of the texts he has chosen for analysis:
 
@@ -73,7 +73,7 @@ Then the paper seeks to answer the more specific research question by identifyin
 
 ![](/home/jmcclellan/MACS30200proj/ProblemSets/PS2/grimmer_results.png)
 
-From here, we see that after the 2008 presidential election, Republicans released fewer credit claiming press releases (while Democrats engage in more), and instead released more press releases concerning health reform, the budget, and the president. Grimmer asserts that the Republican increases in the 3 aforementioned areas are criticisms of presidential policy, citing exerpts from a few press releases as an example.
+From here, we see that after the 2008 presidential election, Republicans released fewer credit claiming press releases (while Democrats engage in more), and instead released more press releases concerning health reform, the budget, and the president. Grimmer asserts that the Republican increases in the 3 aforementioned areas are criticisms of presidential policy, citing exerts from a few press releases as an example.
 
 However, citing himself again, Grimmer notes:
 
@@ -85,4 +85,21 @@ Thus, the change is less characterized as an "about-face" and more as an adjustm
 
 #### Suggestion 1:
 
-As mentioned before Grimmer utilizes 
+As mentioned before Grimmer utilizes 44 granular topics nested under 8 coarse topics for his study. Grimmer justifies his use of 44 granular topics by pointing out that it is a number used in previous studies of Congressional communication, and justifies his use of 8 coarse topics by citing that the number was determined after some initial experiments with a subset of the documents [@grimmer2013 pp.10]
+
+Grimmer could have done a better job in justifying the number of granular and coarse topics selected. When Grimmer says previous studies have used 44, he doesn't explicitly cite which studies (or anything at all within the paragraph). Additionally, "initial experiments" is a really vague term. Grimmer's validation of the topics and interpretation of the results has its foundation in the number of topics he chose to a certain degree, and asserting the numbers would have gone a ways in providing more evidence for the answer.
+
+#### Suggestion 2:
+
+One of the main findings of the paper is that Republicans reduced their credit claiming and increased criticism of the Obama administration and Democratic policies. While the graph that has been included shows a clear reduction in credit claiming and increase in health reform, budget, and president related press releases, Grimmer uses evidence of varying concreteness to justify it as criticism.
+
+In regards to health care, Grimmer simply excepts a few example press releases, for the budget, Grimmer cites another paper, and for the stimulus Grimmer again excerpts from example press releases, but also then uses more "quantitative" comparisons of Republican and Democratic language, contrasting the usage rates of certain words between Democrats and Republicans.
+
+This presentation of evidence seems very uneven. In some cases, Grimmer cites increases he detects in topic usage and cites other papers talking about Republican criticism in regards to that topic to say that criticism was amplified, where in other cases he asserts the evidence of amplified Republican criticism with actual quantitative measures of language usage.
+
+I think the paper would be stronger if Grimmer more evenly utilized the quantitative measure of language difference for *every* topic he claims the Republicans were critical of. It makes a very convincing case for the stimulus debate (which to be fair might cover Budget + President), and I'm sure it would to if it were used for the other topics as well. After all, the paper's central method is a statistical topic model, why not utilize it to back all of the claims it can.
+
+I can imagine it being the case in which the evaluation of language usage actually was not as convincing for the topics which Grimmer does not use them in more explicitly, like the healthcare debate, or the budget specifically, in which case Grimmer ought to explain why he utilized them for the stimulus and not for these topics.
+
+---
+
