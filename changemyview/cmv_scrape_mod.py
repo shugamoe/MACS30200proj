@@ -33,7 +33,7 @@ def can_fail(praw_call, *args, **kwargs):
                 # TODO(jcm): Weird bug. "X was suspended" prints twice.
                 print("{} was suspended".format(self.user_name))
                 call_successful = True
-            except AttributeError:
+            except AttributeError as e:
                 print("\n\t{}".format(str(e)))
                 print("\tTrying: {}".format(praw_call.__name__))
                 call_successful = True
