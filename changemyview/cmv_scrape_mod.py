@@ -311,7 +311,7 @@ class CMVSubmission:
         """
         text = comment.body
         if "Confirmed" in text: # If delta awarded
-            parent_com = comment.parent(self.submission.comments)
+            parent_com = comment.parent()
 
             # This is probably overkill, but I check to make sure DeltaBot
             # actually responded to a comment and not a submission.
