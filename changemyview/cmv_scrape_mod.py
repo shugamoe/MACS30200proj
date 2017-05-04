@@ -309,7 +309,6 @@ class CMVSubmission:
                     self.stats["num_user_comments"] += 1
             except AttributeError: # If author is None, then user is deleted
                 self.stats["num_user_comments"] += 1
-            print(self.stats["num_user_comments"])
 
     @can_fail
     def parse_delta_bot_comment(self, comment):
