@@ -37,6 +37,12 @@ def can_fail(praw_call, *args, **kwargs):
                 print("\n\t{}".format(str(e)))
                 print("\tTrying: {}".format(praw_call.__name__))
                 call_successful = True
+            except RuntimeError as e:
+                print("\n\t{}".format(str(e)))
+                print("\tTrying: {}".format(praw_call.__name__))
+                with open("runtime_error.pkl", "wb") as output:
+                    pickle.dump(SModder, output)
+                call_successful = True
             except Exception as e:
                 print("\n\t{}".format(str(e)))
                 print("\tTrying: {}".format(praw_call.__name__))
