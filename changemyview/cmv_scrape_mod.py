@@ -261,28 +261,23 @@ class CMVSubmission:
     """
     A class of a /r/changemyview submission
     """
-    STATS_TEMPLATE = {"num_root_comments": 0,
-                     "num_user_comments": 0,
-                     "OP_gave_delta": False,
-                     "num_deltas_from_OP": 0}
-
     def __init__(self, sub_inst):
         self.submission = sub_inst
         self.author = self.submission.author.name
         print(self.author)
 
         # Important Variables to track
-        self.stats = self.STATS_TEMPLATE
+        self.stats = {"num_root_comments": 0,
+                     "num_user_comments": 0,
+                     "OP_gave_delta": False,
+                     "num_deltas_from_OP": 0}
 
         self.parsed = False 
     
     @can_fail
-    def parse_root_comments(self, comment_tree=None):
+    def parse_root_comments(self, comment_tree):
         """
         """
-        if not comment_tree:
-            comment_tree = self.submission.comments
-
         for com in comment_tree:
             if isinstance(com, praw.models.MoreComments):
                 self.parse_root_comments(com.comments())
@@ -316,7 +311,7 @@ class CMVSubmission:
         """
         text = comment.body
         if "Confirmed" in text: # If delta awarded
-            parent_com = comment.parent()
+            parent_com = comment.parent(self.submission.comments)
 
             # This is probably overkill, but I check to make sure DeltaBot
             # actually responded to a comment and not a submission.
@@ -344,13 +339,6 @@ class CMVSubAuthor:
     """
     Class for scraping the history of an author of /r/changemyview
     """
-    STATS_TEMPLATE = {"sub_id": [],
-                     "com_id": [],
-                     "sub_inst": [],
-                     "com_inst": [],
-                     "com_newest": []}
-
-
     def __init__(self, redditor_inst):
         """
         """
@@ -358,7 +346,11 @@ class CMVSubAuthor:
         self.user_name = redditor_inst.name
 
         # Important variables to track
-        self.history = self.STATS_TEMPLATE
+        self.history = {"sub_id": [],
+                     "com_id": [],
+                     "sub_inst": [],
+                     "com_inst": [],
+                     "com_newest": []}
     
     @can_fail
     def get_history_for(self, post_type):
@@ -432,7 +424,13 @@ class CMVAuthSubmission:
     """
     """
     COMS_PARSED = 0
-    STATS_TEMPLATE = {"created_utc": None,
+
+    @can_fail
+    def __init__(self, submission_inst):
+        """
+        """
+        self.submission = submission_inst
+        self.stats = {"created_utc": None,
                      "score": None,
                      "subreddit": None,
                      "content": None,
@@ -440,12 +438,6 @@ class CMVAuthSubmission:
                      "num_user_comments": 0,
                      "num_unique_users": 0,
                      "has_deleted_user": False}
-    @can_fail
-    def __init__(self, submission_inst):
-        """
-        """
-        self.submission = submission_inst
-        self.stats = self.STATS_TEMPLATE
         self.unique_users = set()
 
         # Stats that can be gathered right off the bat
@@ -510,7 +502,13 @@ class CMVAuthSubmission:
 class CMVAuthComment:
     """
     """
-    STATS_TEMPLATE = {"created_utc": None,
+
+    @can_fail
+    def __init__(self, comment_inst):
+        """
+        """
+        self.comment = comment_inst
+        self.stats = {"created_utc": None,
                       "score": None,
                       "subreddit": None,
                       "content": None,
@@ -518,13 +516,6 @@ class CMVAuthComment:
                       "num_replies": 0,
                       "parent_submission": None,
                       "parent_comment": False}
-
-    @can_fail
-    def __init__(self, comment_inst):
-        """
-        """
-        self.comment = comment_inst
-        self.stats = self.STATS_TEMPLATE
         self.unique_users = set()
 
         # Stats that can be gathered right away
