@@ -269,6 +269,7 @@ class CMVSubmission:
     def __init__(self, sub_inst):
         self.submission = sub_inst
         self.author = self.submission.author.name
+        print(self.author)
 
         # Important Variables to track
         self.stats = self.STATS_TEMPLATE
