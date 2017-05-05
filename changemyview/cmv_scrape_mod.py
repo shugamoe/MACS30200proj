@@ -261,6 +261,11 @@ class CMVSubmission:
     """
     A class of a /r/changemyview submission
     """
+    STATS_TEMPLATE = {"num_root_comments": 0,
+                      "num_user_comments": 0,
+                      "OP_gave_delta": False,
+                      "num_deltas_from_OP": 0}
+
     def __init__(self, sub_inst):
         self.submission = sub_inst
         self.author = self.submission.author.name
@@ -339,6 +344,11 @@ class CMVSubAuthor:
     """
     Class for scraping the history of an author of /r/changemyview
     """
+    STATS_TEMPLATE = {"sub_id": [],
+                      "com_id": [],
+                      "sub_inst": [],
+                      "com_inst": [],
+                      "com_newest": []}
     def __init__(self, redditor_inst):
         """
         """
@@ -423,6 +433,14 @@ class CMVSubAuthor:
 class CMVAuthSubmission:
     """
     """
+    STATS_TEMPLATE = {"created_utc": None,
+                      "score": None,
+                      "subreddit": None,
+                      "content": None,
+                      "num_root_comments": 0,
+                      "num_user_comments": 0,
+                      "num_unique_users": 0,
+                      "has_deleted_user": False}
     COMS_PARSED = 0
 
     @can_fail
@@ -502,7 +520,14 @@ class CMVAuthSubmission:
 class CMVAuthComment:
     """
     """
-
+    STATS_TEMPLATE = {"created_utc": None,
+            "score": None,
+            "subreddit": None,
+            "content": None,
+            "edited": None,
+            "num_replies": 0,
+            "parent_submission": None,
+            "parent_comment": False} 
     @can_fail
     def __init__(self, comment_inst):
         """
