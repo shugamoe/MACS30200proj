@@ -325,7 +325,8 @@ class CMVSubmission:
                 if parent_com.author.name == self.author:
                     self.stats["OP_gave_delta"] = True
                     self.stats["num_deltas_from_OP"] += 1
-
+    
+    @can_fail
     def get_stats_series(self):
         """
         This function returns a series so this class can update the submissions
@@ -507,6 +508,7 @@ class CMVAuthSubmission:
                 reply_author = "[deleted]"
             self.unique_users.add(reply_author)
 
+    @can_fail
     def get_stats_series(self):
         """
         """
@@ -572,6 +574,7 @@ class CMVAuthComment:
                 reply_author = "[deleted]"
             self.unique_users.add(reply_author)
 
+    @can_fail
     def get_stats_series(self):
         """
         """
