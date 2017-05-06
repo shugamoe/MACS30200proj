@@ -268,7 +268,11 @@ class CMVSubmission:
 
     def __init__(self, sub_inst):
         self.submission = sub_inst
-        self.author = self.submission.author.name
+
+        try:
+            self.author = self.submission.author.name
+        except AttributeError:
+            self.author = "[removed]"
         print(self.author)
 
         # Important Variables to track
