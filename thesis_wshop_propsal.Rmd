@@ -61,4 +61,5 @@ Features that might have less to do with affirmation can also be tracked, such a
 With this data, binary classification can be used to predict the likelihood that a given submission in /r/changemyview contained a delta from the original poster, i.e., to predict whether the original poster change their view.
 
 Given that there might be different affects for a user's first post versus their second post, and third post, and so on, if the data has enough repeat authors, the `nth` submissions on /r/changemyview from authors can be compared to see if the affects change as a Redditor gains more submission experience in posting to /r/changemyview. It would be interesting to see whether Redditors became more or less likely to change their minds. Perhaps, one might think, repeated posting is indicative of a more open mind and willingness to engage, thus more malleable, or perhaps the most malleable opinions appear in the first posts, and as users posts more, they run out of easily changed opinions and are more intractable.
+
 ---
