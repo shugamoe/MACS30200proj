@@ -155,7 +155,9 @@ class CMVScraperModder:
 
         all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs["author"] != "[deleted]"][["sub_inst"]]
-
+        valid_subs = valid_subs.assign(
+                 **{label: None for label in 
+                     list(CMVSubmission.STATS_TEMPLATE.keys())})
         valid_subs.loc[:, sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
                 valid_subs["sub_inst"].apply(lambda sub_inst:
                     CMVSubmission(sub_inst).get_stats_series()))
@@ -223,6 +225,9 @@ class CMVScraperModder:
         # Update Submissions
         sub_inst_series = self.cmv_author_subs[["sub_inst"]]
 
+        sub_inst_series = sub_inst_series.assign(
+                 **{label: None for label in 
+                     list(CMVAuthSubmission.STATS_TEMPLATE.keys())})
         sub_inst_series.loc[:, sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
                 sub_inst_series["sub_inst"].apply(
                     lambda sub_inst: CMVAuthSubmission(sub_inst)
@@ -239,6 +244,9 @@ class CMVScraperModder:
         # Update Comments
         com_inst_series = self.cmv_author_coms[["com_inst"]]
         print("Comment instances gathered")
+        com_inst_series = com_inst_series.assign(
+                 **{label: None for label in 
+                     list(CMVAuthComment.STATS_TEMPLATE.keys())})
         com_inst_series.loc[:, sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
             com_inst_series["com_inst"].apply(
                 lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
@@ -343,7 +351,6 @@ class CMVSubmission:
                     self.stats["OP_gave_delta"] = True
                     self.stats["num_deltas_from_OP"] += 1
     
-    @can_fail
     def get_stats_series(self):
         """
         This function returns a series so this class can update the submissions
@@ -525,7 +532,6 @@ class CMVAuthSubmission:
                 reply_author = "[deleted]"
             self.unique_users.add(reply_author)
 
-    @can_fail
     def get_stats_series(self):
         """
         """
@@ -591,7 +597,6 @@ class CMVAuthComment:
                 reply_author = "[deleted]"
             self.unique_users.add(reply_author)
 
-    @can_fail
     def get_stats_series(self):
         """
         """
