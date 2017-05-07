@@ -156,9 +156,13 @@ class CMVScraperModder:
         all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs["author"] != "[deleted]"][["sub_inst"]]
 
-        valid_subs[sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
+        valid_subs.loc[:, sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
                 valid_subs["sub_inst"].apply(lambda sub_inst:
                     CMVSubmission(sub_inst).get_stats_series()))
+
+        # valid_subs[sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
+                #valid_subs["sub_inst"].apply(lambda sub_inst:
+                    #CMVSubmission(sub_inst).get_stats_series()))
 
         # TODO(jcm): Get index matching without column duplication working, 
         # matching objects is slower than matching strings
@@ -219,10 +223,15 @@ class CMVScraperModder:
         # Update Submissions
         sub_inst_series = self.cmv_author_subs[["sub_inst"]]
 
-        sub_inst_series[sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
+        sub_inst_series.loc[:, sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
                 sub_inst_series["sub_inst"].apply(
                     lambda sub_inst: CMVAuthSubmission(sub_inst)
                     .get_stats_series()))
+   
+        #sub_inst_series[sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
+                #sub_inst_series["sub_inst"].apply(
+                    #lambda sub_inst: CMVAuthSubmission(sub_inst)
+                    #.get_stats_series()))
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series,
                 on="sub_inst", copy=False)
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
@@ -230,10 +239,14 @@ class CMVScraperModder:
         # Update Comments
         com_inst_series = self.cmv_author_coms[["com_inst"]]
         print("Comment instances gathered")
-        com_inst_series[sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
-        com_inst_series["com_inst"].apply(
+        com_inst_series.loc[:, sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
+            com_inst_series["com_inst"].apply(
                 lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
             ))
+        #com_inst_series[sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
+        #com_inst_series["com_inst"].apply(
+                #lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
+            #))
         print("Comment stats extracted")
         self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series,
                 on="com_inst", copy=False)
