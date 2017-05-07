@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import praw
 import pdb
-from prawcore.exceptions import Forbidden, ServerError
+from prawcore.exceptions import Forbidden, ServerError, NotFound
 
 END_2016 = 1483228800
 START_2013 = 1356998400
@@ -28,6 +28,9 @@ def can_fail(praw_call, *args, **kwargs):
         while not call_successful:
             try:
                 praw_call(self, *args, **kwargs)
+                call_successful = True
+            except NotFound:
+                print("User wasn't found")
                 call_successful = True
             except Forbidden:
                 # TODO(jcm): Weird bug. "X was suspended" prints twice.
@@ -215,6 +218,9 @@ class CMVScraperModder:
         else:
             self.cmv_author_subs = SubAuthor.get_post_df("submissions")
 
+        self.cmv_author_subs.dropna(how="all", inplace=True)
+        self.cmv_author_coms.dropna(how="all", inplace=True)
+
     def update_author_history(self):
         """
         """
@@ -301,7 +307,6 @@ class CMVSubmission:
                      "num_user_comments": 0,
                      "OP_gave_delta": False,
                      "num_deltas_from_OP": 0}
-
         self.parsed = False 
     
     @can_fail
