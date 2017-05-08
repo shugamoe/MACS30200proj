@@ -49,13 +49,16 @@ def can_fail(praw_call, *args, **kwargs):
             except Exception as e:
                 print("\n\t{}".format(str(e)))
                 print("\tTrying: {}".format(praw_call.__name__))
-                print("\tWill now wait {} seconds before pinging server again".format(
-                    sleep_time))
-                ping_time = time.strftime("%m/%d %H:%M:%S", time.localtime(
-                    sleep_time + time.mktime(time.localtime())))
-                print("\tServer ping at: {}".format(ping_time))
-                time.sleep(sleep_time)
-                sleep_time += 60
+                if sleep_time > 600:
+                    call_successful
+                else:
+                    print("\tWill now wait {} seconds before pinging server again".format(
+                        sleep_time))
+                    ping_time = time.strftime("%m/%d %H:%M:%S", time.localtime(
+                        sleep_time + time.mktime(time.localtime())))
+                    print("\tServer ping at: {}".format(ping_time))
+                    time.sleep(sleep_time)
+                    sleep_time += 60
 
     return(robust_praw_call)
      
