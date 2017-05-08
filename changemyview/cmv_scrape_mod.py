@@ -295,7 +295,8 @@ class CMVSubmission:
                       "num_user_comments": 0,
                       "OP_gave_delta": False,
                       "num_deltas_from_OP": 0}
-
+    
+    @can_fail
     def __init__(self, sub_inst):
         self.submission = sub_inst
 
@@ -310,8 +311,8 @@ class CMVSubmission:
                      "num_user_comments": 0,
                      "OP_gave_delta": False,
                      "num_deltas_from_OP": 0}
-        self.parsed = False 
-    
+        self.parse_root_comments(self.submission.comments)
+
     @can_fail
     def parse_root_comments(self, comment_tree):
         """
@@ -364,8 +365,6 @@ class CMVSubmission:
         This function returns a series so this class can update the submissions
         dataframe
         """
-        if not self.parsed:
-            self.parse_root_comments(self.submission.comments)
         info_series = pd.Series(self.stats)
         info_series.sort_index(inplace = True)
         return(info_series)
