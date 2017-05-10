@@ -27,7 +27,7 @@ def can_fail(praw_call, *args, **kwargs):
         sleep_time = 120 # Wait 2 minutes if initial call fails
         while not call_successful:
             try:
-                praw_call(self, *args, **kwargs)
+                praw_call_result = praw_call(self, *args, **kwargs)
                 call_successful = True
             except NotFound:
                 print("User wasn't found")
@@ -59,6 +59,10 @@ def can_fail(praw_call, *args, **kwargs):
                     print("\tServer ping at: {}".format(ping_time))
                     time.sleep(sleep_time)
                     sleep_time += 60
+        if "praw_call_result" not in locals():
+            praw_call_result = None
+
+        return(praw_call_result)
 
     return(robust_praw_call)
      
