@@ -50,7 +50,7 @@ def can_fail(praw_call, *args, **kwargs):
                 print("\n\t{}".format(str(e)))
                 print("\tTrying: {}".format(praw_call.__name__))
                 if sleep_time > 600:
-                    call_successful
+                    call_successful = True
                 else:
                     print("\tWill now wait {} seconds before pinging server again".format(
                         sleep_time))
