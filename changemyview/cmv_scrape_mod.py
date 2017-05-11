@@ -225,8 +225,6 @@ class CMVScraperModder:
         else:
             self.cmv_author_subs = SubAuthor.get_post_df("submissions")
 
-        self.cmv_author_subs.dropna(how="all", inplace=True)
-        self.cmv_author_coms.dropna(how="all", inplace=True)
 
     def update_author_history(self):
         """
