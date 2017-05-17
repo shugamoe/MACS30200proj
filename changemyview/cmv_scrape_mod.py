@@ -12,6 +12,9 @@ from prawcore.exceptions import Forbidden, ServerError, NotFound
 
 END_2016 = 1483228800
 START_2013 = 1356998400
+START_2015 = 1420070400
+START_2016 = 1451606400
+MID_2016 = 1464739200
 
 START_BDAY_2016 = 1461110400
 END_BDAY_2016 = 1461130000
@@ -34,7 +37,10 @@ def can_fail(praw_call, *args, **kwargs):
                 call_successful = True
             except Forbidden:
                 # TODO(jcm): Weird bug. "X was suspended" prints twice.
-                print("{} was suspended".format(self.user_name))
+                try:
+                    print("{} was suspended".format(self.user_name))
+                except:
+                    pass
                 call_successful = True
             except AttributeError as e:
                 print("\n\t{}".format(str(e)))
@@ -210,14 +216,14 @@ class CMVScraperModder:
         """
         print("Retrieving history for: {}".format(author))
         SubAuthor = CMVSubAuthor(self.praw_agent.redditor(author))
-        SubAuthor.get_history_for("comments")
+        # SubAuthor.get_history_for("comments")
         SubAuthor.get_history_for("submissions")
         
-        if hasattr(self, "cmv_author_coms"):
-            self.cmv_author_coms= self.cmv_author_coms.append(
-                    SubAuthor.get_post_df("comments"))
-        else:
-            self.cmv_author_coms = SubAuthor.get_post_df("comments")
+        # if hasattr(self, "cmv_author_coms"):
+        #    self.cmv_author_coms= self.cmv_author_coms.append(
+        #            SubAuthor.get_post_df("comments"))
+        # else:
+        #    self.cmv_author_coms = SubAuthor.get_post_df("comments")
 
         if hasattr(self, "cmv_author_subs"):
             self.cmv_author_subs = self.cmv_author_subs.append(
@@ -229,7 +235,7 @@ class CMVScraperModder:
     def update_author_history(self):
         """
         """
-        if hasattr(self, "cmv_author_coms"):
+        if hasattr(self, "cmv_author_subs"):
             pass
         else:
             self.get_author_histories()
@@ -253,24 +259,24 @@ class CMVScraperModder:
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
 
         # Update Comments
-        com_inst_series = self.cmv_author_coms[["com_inst"]]
-        print("Comment instances gathered")
-        com_inst_series = com_inst_series.assign(
-                 **{label: None for label in 
-                     list(CMVAuthComment.STATS_TEMPLATE.keys())})
-        com_inst_series.loc[:, sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
-            com_inst_series["com_inst"].apply(
-                lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
-            ))
+        # com_inst_series = self.cmv_author_coms[["com_inst"]]
+        # print("Comment instances gathered")
+        # com_inst_series = com_inst_series.assign(
+                 # **{label: None for label in 
+                     # list(CMVAuthComment.STATS_TEMPLATE.keys())})
+        # com_inst_series.loc[:, sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
+            # com_inst_series["com_inst"].apply(
+                # lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
+            # ))
         #com_inst_series[sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
         #com_inst_series["com_inst"].apply(
                 #lambda com_inst: CMVAuthComment(com_inst).get_stats_series()
             #))
-        print("Comment stats extracted")
-        self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series,
-                on="com_inst", copy=False)
-        self.cmv_author_coms.drop_duplicates(subset="com_id", inplace=True)
-        print("Comment stats merged")
+        # print("Comment stats extracted")
+        # self.cmv_author_coms = self.cmv_author_coms.merge(com_inst_series,
+                # on="com_inst", copy=False)
+        # self.cmv_author_coms.drop_duplicates(subset="com_id", inplace=True)
+        # print("Comment stats merged")
 
     @staticmethod
     def make_output_dir(dir_name):
@@ -496,10 +502,10 @@ class CMVAuthSubmission:
         self.stats["created_utc"] = self.submission.created_utc
         self.stats["score"] = self.submission.score
         self.stats["subreddit"] = self.submission.subreddit_name_prefixed
-        self.stats["content"] = self.submission.selftext
+        # self.stats["content"] = self.submission.selftext
         
-        self.parse_root_comments(self.submission.comments)
-        self.num_unique_users = len(self.unique_users)
+        # self.parse_root_comments(self.submission.comments)
+        # self.num_unique_users = len(self.unique_users)
         self.parsed = True
 
     @can_fail
@@ -546,6 +552,7 @@ class CMVAuthSubmission:
         """
         info_series = pd.Series(self.stats)
         info_series.sort_index(inplace = True)
+        print(self.COMS_PARSED)
         return(info_series)
 
 # STATS_TEMPLATE for date, score, subreddit. Could probably include a general
@@ -615,9 +622,9 @@ class CMVAuthComment:
 
     
 if __name__ == "__main__":
-    SModder = CMVScraperModder(START_2013, END_2016)
+    SModder = CMVScraperModder(START_2016, END_2016)
 
     SModder.update_cmv_submissions()
     SModder.update_author_history()
-    # with open("test.pkl", "wb") as output:
-     #    pickle.dump(SModder, output)
+    with open("test.pkl", "wb") as output:
+        pickle.dump(SModder, output)
