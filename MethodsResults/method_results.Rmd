@@ -226,7 +226,10 @@ et al. [-@tan2016winning] were only able to get an AUC of `.54`, by looking at a
 large number of features extracted from the langauge of the CMV submission
 itself. In the logistic model given above, we use much more primitive features,
 simply looking at the OP's past submissions, their scores, and a simple measure
-of subreddit diversity in these submissions.
+of subreddit diversity in these submissions. Additionally, Tan et al. utilized a filtering
+procedure, based on OP interaction and the number of unique respondents, to remove
+submissions that did not have enough debate (in their view) to warrant a delta; no such
+filtering procedure has been used here.
 
 The statistical signifiance of some of our features provides some evidence that
 self-affirmation plays a role in whether or not the original poster of
