@@ -1,0 +1,241 @@
+---
+title: "Methods and Initial Results"
+author: "Julian McClellan"
+date: "Due 5/17/17"
+output:
+  pdf_document:
+    includes:
+      in_header:
+        header.tex
+fontsize: 12pt
+bibliography: citations.bib
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE,
+                      echo = FALSE)
+library(tidyverse)
+library(purrr)
+library(lmtest)
+library(lubridate)
+library(stargazer)
+library(ineq)
+library(pROC)
+library(modelr)
+theme_set(theme_minimal())
+
+dat_cmv_subs <- read_csv("changemyview/cmv_subs.csv") %>%
+  mutate(OP_gave_delta = ifelse(OP_gave_delta == "True", TRUE, FALSE))
+dat_cmv_auth_subs <- read_csv("changemyview/cmv_auth_subs.csv")
+
+sumry_gave_delta <- dat_cmv_subs %>% 
+  group_by(OP_gave_delta) %>%
+  summarise(count = n()) %>%
+  mutate(prop = count / sum(count))
+```
+
+## Model Justification
+
+In the subreddit /r/changemyview, Reddit users (Redditors) post their views as
+submissions on the subreddit, and other Redditors attempt to change these views.
+If the Redditor who originally posted their view has changed their view to some
+extent, they are able to award a "delta" to comment (and the Redditor who
+authored that comment). These deltas are explicitly coded in the submission and
+thus, one can say that for a given submission in /r/changemyview, whether or not
+the original poster (OP) changed changed their mind at least once; i.e. they
+awarded at least one delta.
+
+Self-affirmation, a theory in psychology suggests:
+
+> "[I]f global self-worth is temporarily bolstered by success in a second, unrelated domain, the individual should be more willing to tolerate a threat to the domain of interest."
+
+[@correll2004affirmed]
+
+In the context of submission in /r/changemyview, the "threats" to OP's domain of
+interest are the comments that attempt to change their views. For many of the
+OP's, their submissions to /r/changemyview are not their first submissions they
+have made in Reddit. Any prior submissions an OP made can be considered
+potential cases where his or her global self-worth may have been temporarily
+bolstered. Looking at these submissions prior to an /r/changemyview submissions,
+all of them receive a "score" of some number, the net of upvotes and downvotes
+from other members of the community could serve as proxy for the "degree" to
+which the individual's self-worth was bolstered. 
+
+Additionally, one might argue that the very act of posting a submission bolsters
+global self-worth on its own. Indeed, many psychological experiments testing
+self-affirmation theory focus on global self-worth bolstered by the person
+themselves [@cohen2000beliefs].
+
+It might also be justified to also look at the *total* score of the Redditor's prior submissions, to explicitly see the lifetime score of their submissions prior to that /r/changemyview submission. In a generalized linear model, we can account for this with an interaction term between the number of submissions and the average score per submission.
+
+Thankfully, the entire submission history of any Redditor is publically available, so all of these statistics can be gathered and calculated. 
+
+### Past Submission Diversity
+
+Additionally, one might also want to test for an sort of "echo" chamber effect.
+The subreddit in which submissions were made can be obtained, and there might 
+be a difference in how likely a Redditor is to award a "delta" if that
+Redditor's past submissions took place across a relatively diverse set of
+subreddits versus a select few. Gini index can serve as suitable metric for this 
+measure.
+
+## Model Definition
+
+The binary nature of our outcome variable, whether or not OP awards a delta, makes the following logistic model viable:
+
+$$prob\_OP\_award\_delta = \frac{1}{1 + exp(-(\beta_0 + \beta_{1}X_1+
+\beta_{2}X_2 + \beta_{3}X_3 + \beta_{4}X_1X_2))}$$
+
+where: 
+$$\left\{\begin{matrix}
+X_1 & = & num\_prior\_subs& \\ 
+X_2 &  =&avg\_sub\_score \\ 
+X_3 &  =& subreddit\_gini\_index
+\end{matrix}\right.$$
+
+```{r make_model_dat, eval=FALSE}
+model_indep_vars <- function(submission, dat_cmv_auth_subs){
+  force(dat_cmv_auth_subs)
+  prior_subs <- dat_cmv_auth_subs %>%
+    filter(author == submission$author,
+           created_utc < submission$created_utc)
+  
+  if (nrow(prior_subs) == 0){
+    has_priors <- FALSE
+  } else{
+    has_priors <- TRUE
+  }
+  
+  subreddit_dist <- prior_subs %>%
+    group_by(subreddit) %>%
+    summarise(n = n())
+  
+  # browser()
+  
+  (sub_info <- c(nrow(prior_subs),
+                mean(prior_subs$score),
+                ineq(subreddit_dist$n, type = "Gini"),
+                has_priors))
+}
+
+model_dat <- dat_cmv_subs %>%
+  by_row(model_indep_vars, dat_cmv_auth_subs = dat_cmv_auth_subs, 
+         .collate = "cols", .to = "indep_var") %>%
+  rename(num_prior_subs = indep_var1,
+         avg_sub_score = indep_var2,
+         gini_index = indep_var3,
+         has_priors = indep_var4) %>%
+  filter(has_priors == TRUE) %>%
+  select(OP_gave_delta, num_prior_subs, avg_sub_score, gini_index)
+
+write_csv(model_dat, "model_dat.csv")
+```
+
+```{r read_model_dat}
+model_dat <- read_csv("model_dat.csv")
+indep_vars <- model_dat %>%
+  select(-OP_gave_delta)
+
+sumry_model_gave_delta <- model_dat %>% 
+  group_by(OP_gave_delta) %>%
+  summarise(count = n()) %>%
+  mutate(prop = count / sum(count))
+```
+
+## Data 
+
+The data includes all `r nrow(dat_cmv_subs)` submissions made by `r length( unique(dat_cmv_subs$author))` unique authors. Of these `r nrow(dat_cmv_subs)`
+submissions, `r sumry_gave_delta$count[1]` of them, or 
+`r paste(round(sumry_gave_delta$prop[1] * 100, 2), "%")` did not have their OP
+award a delta. (The view of the OP was not changed). The other `r sumry_gave_delta$count[2]` of the posts, or `r paste(round(sumry_gave_delta$prop[1] * 100, 2), "%")` had their OP award a delta.
+
+From this initial set of submissions, we are only interested in submissions in
+which the OP had prior submission history.
+
+From the initial `r nrow(dat_cmv_subs)` submissions, only `r nrow(model_dat)` (`r paste(round(100 * nrow(model_dat) / nrow(dat_cmv_subs), 2), "%")`) were made by
+OP's with prior submission history. Of these `r nrow(model_dat)`
+submissions, `r sumry_model_gave_delta$count[1]` of them (`r paste(round(sumry_model_gave_delta$prop[1] * 100, 2), "%")`) did not have
+their OP award a delta. (The view of the OP was not changed). The other `r sumry_model_gave_delta$count[2]` of the posts (`r paste(round(sumry_model_gave_delta$prop[1] * 100, 2), "%")`) of had their OP
+award a delta.
+
+A summary table for:  
+
+```{r, results="asis"}
+stargazer(as.data.frame(indep_vars), 
+          title = "Independent Variable Summary Statistics",
+          header = FALSE, type = "latex", 
+          summary.stat =  c("mean", "sd", "min", "p25", "median", "p75", "max")) 
+```
+
+## Initial Results
+
+Now we compute the logistic model as described above:
+
+$$prob\_OP\_award\_delta = \frac{1}{1 + exp(-(\beta_0 + \beta_{1}X_1+
+\beta_{2}X_2 + \beta_{3}X_3 + \beta_{4}X_1X_2))}$$
+
+where: 
+$$\left\{\begin{matrix}
+X_1 & = & num\_prior\_subs& \\ 
+X_2 &  =&avg\_sub\_score \\ 
+X_3 &  =& subreddit\_gini\_index
+\end{matrix}\right.$$
+
+---
+
+The table below shows statistical signifiance at the `0.01` level for the number
+of prior submissions and the total prior submissions score we created as an
+interaction term. Now let's evaluate the model accuracy with a look at the area
+under the ROC curve (AUC).
+
+```{r logistic_results, results="asis"}
+logit_init <- glm(OP_gave_delta ~ num_prior_subs + avg_sub_score + num_prior_subs * avg_sub_score + gini_index,
+                  data = model_dat)
+stargazer(logit_init, title = "Initial Logistic Regression Results", 
+          covariate.labels = c("Number of prior Submissions", 
+                            "Average prior submission score",
+                            "Gini Index",
+                            "Total Prior Submission Score (Interaction)"),
+          keep.stat = c("rsq", "ser", "wald", "adj.rsq", "rsq"),
+          type = "latex",
+          header = FALSE)
+
+logit2prob <- function(x){
+  exp(x) / (1 + exp(x))
+}
+```
+
+
+```{r logistic_auc}
+delta_accuracy <- model_dat %>%
+  add_predictions(logit_init) %>%
+  mutate(pred = logit2prob(pred),
+         prob = pred,
+         pred = as.numeric(pred > .5))
+
+auc_delta <- auc(delta_accuracy$OP_gave_delta, delta_accuracy$prob)
+
+plot(roc(delta_accuracy$OP_gave_delta, delta_accuracy$prob), 
+     main =
+       sprintf("ROC Curve for Initial Logistic Model | AUC = %.3f", auc_delta))
+```
+
+Although we only get an AUC of `r auc_delta` this is still very promising. Tan
+et al. [-@tan2016winning] were only able to get an AUC of `.54`, by looking at a
+large number of features extracted from the langauge of the CMV submission
+itself. In the logistic model given above, we use much more primitive features,
+simply looking at the OP's past submissions, their scores, and a simple measure
+of subreddit diversity in these submissions.
+
+The statistical signifiance of some of our features provides some evidence that
+self-affirmation plays a role in whether or not the original poster of
+/r/changemyview submission will change their view (award a delta). Additionally,
+because the original text of each individual submission is also available for
+natural language processing, this logistic model can be improved by adding these
+sorts of language features as well. For instance, Tan et al. utilized first
+person pronoun useage as a proxy for self-affirmation in the /r/changemyview submission, and first-person pronoun useage in prior submission content can be be extracted as well.
+
+\newpage 
+
+## References
