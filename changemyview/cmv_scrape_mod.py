@@ -303,7 +303,7 @@ class CMVSubmission:
                       "num_user_comments": 0,
                       "OP_gave_delta": False,
                       "num_deltas_from_OP": 0,
-                      "created_utc": None}
+                      "created_utc": None,
                       "content": None}
     
     @can_fail
