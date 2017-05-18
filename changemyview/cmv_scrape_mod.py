@@ -303,8 +303,8 @@ class CMVSubmission:
                       "num_user_comments": 0,
                       "OP_gave_delta": False,
                       "num_deltas_from_OP": 0,
+                      "created_utc": None}
                       "content": None}
-                
     
     @can_fail
     def __init__(self, sub_inst):
@@ -320,10 +320,12 @@ class CMVSubmission:
         self.stats = {"num_root_comments": 0,
                      "num_user_comments": 0,
                      "OP_gave_delta": False,
+                     "created_utc": None,
+                     "num_deltas_from_OP": 0,
                      "num_deltas_from_OP": 0,
                      "content": None}
         self.content = self.submission.selftext
-                        
+        self.stats["created_utc"] = self.submission.created_utc
         self.parse_root_comments(self.submission.comments)
 
     @can_fail
