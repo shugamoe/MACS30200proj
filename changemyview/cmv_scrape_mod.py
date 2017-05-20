@@ -304,7 +304,9 @@ class CMVSubmission:
                       "OP_gave_delta": False,
                       "num_deltas_from_OP": 0,
                       "created_utc": None,
-                      "content": None}
+                      "num_deltas_from_OP": 0,
+                      "content": None,
+                      "title": None}
     
     @can_fail
     def __init__(self, sub_inst):
@@ -323,8 +325,10 @@ class CMVSubmission:
                      "created_utc": None,
                      "num_deltas_from_OP": 0,
                      "num_deltas_from_OP": 0,
-                     "content": None}
+                     "content": None,
+                     "title": None}
         self.stats["content"] = self.submission.selftext
+        self.stats["title"] = self.submission.title
         self.stats["created_utc"] = self.submission.created_utc
         self.parse_root_comments(self.submission.comments)
 
@@ -487,7 +491,8 @@ class CMVAuthSubmission:
                       "num_root_comments": 0,
                       "num_user_comments": 0,
                       "num_unique_users": 0,
-                      "has_deleted_user": False}
+                      "has_deleted_user": False, 
+                      "title": None}
     COMS_PARSED = 0
 
     @can_fail
@@ -501,8 +506,8 @@ class CMVAuthSubmission:
                      "content": None,
                      "num_root_comments": 0,
                      "num_user_comments": 0,
-                     "num_unique_users": 0,
-                     "has_deleted_user": False}
+                     "has_deleted_user": False, 
+                     "title": None}
         self.unique_users = set()
 
         # Stats that can be gathered right off the bat
@@ -510,6 +515,7 @@ class CMVAuthSubmission:
         self.stats["score"] = self.submission.score
         self.stats["subreddit"] = self.submission.subreddit_name_prefixed
         self.stats["content"] = self.submission.selftext
+        self.stats["title"] = self.submission.title
         
         # self.parse_root_comments(self.submission.comments)
         # self.num_unique_users = len(self.unique_users)
