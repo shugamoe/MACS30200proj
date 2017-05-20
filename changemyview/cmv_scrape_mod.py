@@ -324,7 +324,7 @@ class CMVSubmission:
                      "num_deltas_from_OP": 0,
                      "num_deltas_from_OP": 0,
                      "content": None}
-        self.content = self.submission.selftext
+        self.stats["content"] = self.submission.selftext
         self.stats["created_utc"] = self.submission.created_utc
         self.parse_root_comments(self.submission.comments)
 
