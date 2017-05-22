@@ -370,7 +370,7 @@ class CMVSubmission:
 
             # Check for OP comments
             try:
-                if str(com.author) == self.author:
+                if str(reply.author) == self.author:
                     self.stats["num_OP_comments"] += 1
                 else:
                     self.stats["num_user_comments"] += 1
