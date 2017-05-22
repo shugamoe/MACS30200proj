@@ -257,6 +257,7 @@ class CMVScraperModder:
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series,
                 on="sub_inst", copy=False)
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
+        self.cmv_author_subs.dropna(axis=0, how="any", inplace=True)
 
         # Update Comments
         # com_inst_series = self.cmv_author_coms[["com_inst"]]
@@ -301,6 +302,7 @@ class CMVSubmission:
     """
     STATS_TEMPLATE = {"num_root_comments": 0,
                       "num_user_comments": 0,
+                      "num_OP_comments": 0,
                       "OP_gave_delta": False,
                       "num_deltas_from_OP": 0,
                       "created_utc": None,
@@ -323,6 +325,7 @@ class CMVSubmission:
                      "num_user_comments": 0,
                      "OP_gave_delta": False,
                      "created_utc": None,
+                     "num_OP_comments": 0,
                      "num_deltas_from_OP": 0,
                      "num_deltas_from_OP": 0,
                      "content": None,
@@ -344,6 +347,8 @@ class CMVSubmission:
             else:
                 self.stats["num_user_comments"] += 1
                 self.stats["num_root_comments"] += 1
+                if str(com.author) == self.author:
+                    self.stats["num_OP_comments"] += 1
                 self.parse_replies(com.replies)
 
         self.parsed = True
@@ -362,6 +367,15 @@ class CMVSubmission:
                     self.stats["num_user_comments"] += 1
             except AttributeError: # If author is None, then user is deleted
                 self.stats["num_user_comments"] += 1
+
+            # Check for OP comments
+            try:
+                if str(com.author) == self.author:
+                    self.stats["num_OP_comments"] += 1
+                else:
+                    self.stats["num_user_comments"] += 1
+            except AttributeError: # If author is None, then user is deleted
+                pass
 
     @can_fail
     def parse_delta_bot_comment(self, comment):
