@@ -306,7 +306,6 @@ class CMVSubmission:
                       "OP_gave_delta": False,
                       "num_deltas_from_OP": 0,
                       "created_utc": None,
-                      "num_deltas_from_OP": 0,
                       "content": None,
                       "title": None}
     
@@ -326,7 +325,6 @@ class CMVSubmission:
                      "OP_gave_delta": False,
                      "created_utc": None,
                      "num_OP_comments": 0,
-                     "num_deltas_from_OP": 0,
                      "num_deltas_from_OP": 0,
                      "content": None,
                      "title": None}
