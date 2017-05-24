@@ -68,9 +68,9 @@ def can_fail(praw_call, *args, **kwargs):
         if "praw_call_result" not in locals():
             praw_call_result = None
 
-        return(praw_call_result)
+        return praw_call_result
 
-    return(robust_praw_call)
+    return robust_praw_call
 
 
 class CMVScraperModder:
@@ -84,7 +84,7 @@ class CMVScraperModder:
         """
         # PRAW objects
         self.praw_agent = praw.Reddit("cmv_scrape", # Site ID
-            user_agent = "/u/shugamoe /r/changemyview scraper")
+                                      user_agent = "/u/shugamoe /r/changemyview scraper")
         self.subreddit = self.praw_agent.subreddit("changemyview")
 
         self.praw_agent.read_only = True # We"re just here to look
@@ -92,34 +92,34 @@ class CMVScraperModder:
         # Start and end dates of interest
         self.date_start = start
         self.date_end = end
-        
+
         # If more than a day between start and end break up the date into
         # approximately day sized chunks to avoid 503 error.
         if end - start > 86400:
-            self.date_chunks = np.ceil(np.linspace(start, end, num = 
+            self.date_chunks = np.ceil(np.linspace(start, end, num=
                 (end - start) / 85400))
 
         # Example instances to to tinker with
         self.eg_submission = self.praw_agent.submission("5kgxsz")
         self.eg_comment = self.praw_agent.comment("cr2jp5a")
         self.eg_user = self.praw_agent.redditor("RocketCity1234")
-    
+
     @can_fail
     def get_all_submissions(self):
         """
-        This function gathers the submission IDs for submissions in 
+        This function gathers the submission IDs for submissions in
         /r/changemyview
         """
         if hasattr(self, "date_chunks"):
             print("Time window too large, gathering submissions in chunks")
             second_last_index = len(self.date_chunks) - 2
             for i in range(second_last_index):
-                if i == 0: 
+                if i == 0:
                     date_start = self.date_chunks[i]
                     date_end = self.date_chunks[i + 1]
                 else:
                     date_start = self.date_chunks[i] + 1
-                    date_end = self.date_chunks[i + 1] 
+                    date_end = self.date_chunks[i + 1]
 
                 self._get_submissions_between(date_start, date_end)
             num_subs_gathered = len(self.cmv_subs)
@@ -137,7 +137,7 @@ class CMVScraperModder:
             time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_end)))
         print("Gathering {} to {}".format(date_start_string, date_end_string))
         sub_df_dict = {col_name: [] for col_name in self.INIT_SUB_COL_NAMES}
-        
+ 
         for sub in self.subreddit.submissions(date_start, date_end):
             try:
                 sub_df_dict["author"].append(sub.author.name)
@@ -169,11 +169,11 @@ class CMVScraperModder:
         all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs["author"] != "[deleted]"][["sub_inst"]]
         valid_subs = valid_subs.assign(
-            **{label: None for label in 
-                    list(CMVSubmission.STATS_TEMPLATE.keys())})
+            **{label: None for label in
+               list(CMVSubmission.STATS_TEMPLATE.keys())})
         valid_subs.loc[:, sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
             valid_subs["sub_inst"].apply(lambda sub_inst:
-                    CMVSubmission(sub_inst).get_stats_series()))
+                                         CMVSubmission(sub_inst).get_stats_series()))
 
         # valid_subs[sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
                 #valid_subs["sub_inst"].apply(lambda sub_inst:
@@ -191,8 +191,8 @@ class CMVScraperModder:
             - How many deltas the OP awarded
             - Number of top level replies
         """
-        Submission = CMVSubmission(sub_inst)
-        Submission.parse_root_comments()
+        submission = CMVSubmission(sub_inst)
+        submission.parse_root_comments(None)
 
         return(Submission.get_stats_series())
     
@@ -224,7 +224,7 @@ class CMVScraperModder:
 
         if hasattr(self, "cmv_author_subs"):
             self.cmv_author_subs = self.cmv_author_subs.append(
-                    SubAuthor.get_post_df("submissions"))
+                SubAuthor.get_post_df("submissions"))
         else:
             self.cmv_author_subs = SubAuthor.get_post_df("submissions")
 
@@ -240,10 +240,10 @@ class CMVScraperModder:
         sub_inst_series = self.cmv_author_subs[["sub_inst"]]
 
         sub_inst_series = sub_inst_series.assign(
-                 **{label: None for label in 
-                     list(CMVAuthSubmission.STATS_TEMPLATE.keys())})
+            **{label: None for label in 
+                    list(CMVAuthSubmission.STATS_TEMPLATE.keys())})
         sub_inst_series.loc[:, sorted(list(CMVAuthSubmission.STATS_TEMPLATE.keys()))] = (
-                sub_inst_series["sub_inst"].apply(
+            sub_inst_series["sub_inst"].apply(
                     lambda sub_inst: CMVAuthSubmission(sub_inst)
                     .get_stats_series()))
    
@@ -252,7 +252,7 @@ class CMVScraperModder:
                     #lambda sub_inst: CMVAuthSubmission(sub_inst)
                     #.get_stats_series()))
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series,
-                on="sub_inst", copy=False)
+                                                          on="sub_inst", copy=False)
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
         self.cmv_author_subs.dropna(axis=0, how="any", inplace=True)
 
@@ -260,7 +260,7 @@ class CMVScraperModder:
         # com_inst_series = self.cmv_author_coms[["com_inst"]]
         # print("Comment instances gathered")
         # com_inst_series = com_inst_series.assign(
-                 # **{label: None for label in 
+                 # **{label: None for label in
                      # list(CMVAuthComment.STATS_TEMPLATE.keys())})
         # com_inst_series.loc[:, sorted(list(CMVAuthComment.STATS_TEMPLATE.keys()))] = (
             # com_inst_series["com_inst"].apply(
@@ -288,10 +288,10 @@ class CMVScraperModder:
         if not os.access(output_dir, os.F_OK):
             os.makedirs(output_dir)
 
-        return(output_dir)
+        return output_dir
 
 # Would like to have this inherit from praw"s submissions class but with the way
-# I"m scraping the data I would have to tinker with a praw"s sublisting class 
+# I"m scraping the data I would have to tinker with a praw"s sublisting class
 # and subreddit class.
 class CMVSubmission:
     """
@@ -305,7 +305,7 @@ class CMVSubmission:
                       "created_utc": None,
                       "content": None,
                       "title": None}
-    
+
     @can_fail
     def __init__(self, sub_inst):
         self.submission = sub_inst
@@ -318,13 +318,13 @@ class CMVSubmission:
 
         # Important Variables to track
         self.stats = {"num_root_comments": 0,
-                     "num_user_comments": 0,
-                     "OP_gave_delta": False,
-                     "created_utc": None,
-                     "num_OP_comments": 0,
-                     "num_deltas_from_OP": 0,
-                     "content": None,
-                     "title": None}
+                      "num_user_comments": 0,
+                      "OP_gave_delta": False,
+                      "created_utc": None,
+                      "num_OP_comments": 0,
+                      "num_deltas_from_OP": 0,
+                      "content": None,
+                      "title": None}
         self.stats["content"] = self.submission.selftext
         self.stats["title"] = self.submission.title
         self.stats["created_utc"] = self.submission.created_utc
@@ -394,8 +394,8 @@ class CMVSubmission:
         dataframe
         """
         info_series = pd.Series(self.stats)
-        info_series.sort_index(inplace = True)
-        return(info_series)
+        info_series.sort_index(inplace=True)
+        return info_series
 
 
 # TODO(jcm): Implement the inheritance from praw"s Redditor class, would be a 
@@ -417,10 +417,10 @@ class CMVSubAuthor:
 
         # Important variables to track
         self.history = {"sub_id": [],
-                     "com_id": [],
-                     "sub_inst": [],
-                     "com_inst": [],
-                     "com_newest": []}
+                        "com_id": [],
+                        "sub_inst": [],
+                        "com_inst": [],
+                        "com_newest": []}
     
     @can_fail
     def get_history_for(self, post_type):
@@ -441,10 +441,10 @@ class CMVSubAuthor:
 
         if posts_retrieved in  [999, 1000]:
             print("\t999 or 1000 {} retrieved exactly,"
-                " attempting to retrive more for {}.".format(
+                  " attempting to retrive more for {}.".format(
                     post_type, self.user_name))
             self.get_more_history_for(post_prefix, post_type,
-                    post_generator)
+                                      post_generator)
         elif posts_retrieved > 1000:
             print("{} {} retrieved, don't have to worry about comment limit".format(
                 posts_retrieved, post_type))
@@ -572,7 +572,6 @@ class CMVAuthSubmission:
         """
         info_series = pd.Series(self.stats)
         info_series.sort_index(inplace=True)
-        print(self.COMS_PARSED)
         return info_series
 
 # STATS_TEMPLATE for date, score, subreddit. Could probably include a general
