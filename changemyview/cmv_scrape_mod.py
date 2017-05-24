@@ -254,7 +254,7 @@ class CMVScraperModder:
         self.cmv_author_subs = self.cmv_author_subs.merge(sub_inst_series,
                                                           on="sub_inst", copy=False)
         self.cmv_author_subs.drop_duplicates(subset="sub_id", inplace=True)
-        self.cmv_author_subs.dropna(axis=0, how="any", inplace=True)
+        self.cmv_author_subs.dropna(axis=0, how="all", inplace=True)
 
         # Update Comments
         # com_inst_series = self.cmv_author_coms[["com_inst"]]
