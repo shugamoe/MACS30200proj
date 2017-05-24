@@ -1,14 +1,14 @@
-# Scraper for /r/changemyview data
+"""
+Scraper for /r/changemyview data
+"""
 
 import os
 import time
-import re
 import pickle
 import numpy as np
 import pandas as pd
 import praw
-import pdb
-from prawcore.exceptions import Forbidden, ServerError, NotFound
+from prawcore.exceptions import Forbidden, NotFound
 
 END_2016 = 1483228800
 START_2013 = 1356998400
@@ -71,7 +71,6 @@ def can_fail(praw_call, *args, **kwargs):
         return(praw_call_result)
 
     return(robust_praw_call)
-     
 
 
 class CMVScraperModder:
@@ -121,7 +120,6 @@ class CMVScraperModder:
                 else:
                     date_start = self.date_chunks[i] + 1
                     date_end = self.date_chunks[i + 1] 
-                   
 
                 self._get_submissions_between(date_start, date_end)
             num_subs_gathered = len(self.cmv_subs)
@@ -134,11 +132,10 @@ class CMVScraperModder:
         """
         """
         date_start_string = (
-                time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_start)))
+            time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_start)))
         date_end_string = (
-                time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_end)))
-        print("Gathering {} to {}".format(date_start_string, 
-                    date_end_string))
+            time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(date_end)))
+        print("Gathering {} to {}".format(date_start_string, date_end_string))
         sub_df_dict = {col_name: [] for col_name in self.INIT_SUB_COL_NAMES}
         
         for sub in self.subreddit.submissions(date_start, date_end):
@@ -172,10 +169,10 @@ class CMVScraperModder:
         all_subs = self.cmv_subs
         valid_subs = all_subs[all_subs["author"] != "[deleted]"][["sub_inst"]]
         valid_subs = valid_subs.assign(
-                 **{label: None for label in 
-                     list(CMVSubmission.STATS_TEMPLATE.keys())})
+            **{label: None for label in 
+                    list(CMVSubmission.STATS_TEMPLATE.keys())})
         valid_subs.loc[:, sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
-                valid_subs["sub_inst"].apply(lambda sub_inst:
+            valid_subs["sub_inst"].apply(lambda sub_inst:
                     CMVSubmission(sub_inst).get_stats_series()))
 
         # valid_subs[sorted(list(CMVSubmission.STATS_TEMPLATE.keys()))] = (
@@ -453,7 +450,7 @@ class CMVSubAuthor:
                 posts_retrieved, post_type))
         else:
             print("\t{} {} retrieved for {}".format(posts_retrieved,
-                post_type, self.user_name))
+                                                    post_type, self.user_name))
 
     @can_fail
     def get_more_history_for(self, post_prefix, post_type, post_generator):
@@ -462,7 +459,7 @@ class CMVSubAuthor:
         con_posts = post_generator.controversial(limit=None)
         hot_posts = post_generator.hot(limit=None)
         top_posts = post_generator.top(limit=None)
-        
+
         new_posts_found, same_posts_found = 0, 0
         for post_types in zip(con_posts, hot_posts, top_posts):
             for post in post_types:
@@ -474,9 +471,9 @@ class CMVSubAuthor:
                         self.history["com_newest"].append(False)
                 else:
                     same_posts_found += 1
-        
+ 
         if new_posts_found == 3000:
-            print("Maximum number (3000) of new [] found".format(post_type))
+            print("Maximum number (3000) of new {} found".format(post_type))
         else:
             print("\t{} new and {} same {} found".format(new_posts_found,
                 same_posts_found, post_type))
@@ -487,10 +484,10 @@ class CMVSubAuthor:
         comments or submissions dataframe in CMVScraperModder.
         """
         attribution_dict = {post_type_key: value for post_type_key, value in
-                self.history.items() if post_type[:3] == 
-                post_type_key[:3]}
+                            self.history.items() if post_type[:3] ==
+                            post_type_key[:3]}
         attribution_dict.update({"author": self.user_name})
-        return(pd.DataFrame(attribution_dict))
+        return pd.DataFrame(attribution_dict)
 
 # TODO(jcm): Make CMVSubmission inherit from CMVAuthSubmission(?)
 class CMVAuthSubmission:
@@ -503,9 +500,8 @@ class CMVAuthSubmission:
                       "num_root_comments": 0,
                       "num_user_comments": 0,
                       "num_unique_users": 0,
-                      "has_deleted_user": False, 
+                      "has_deleted_user": False,
                       "title": None}
-    COMS_PARSED = 0
 
     @can_fail
     def __init__(self, submission_inst):
@@ -513,13 +509,13 @@ class CMVAuthSubmission:
         """
         self.submission = submission_inst
         self.stats = {"created_utc": None,
-                     "score": None,
-                     "subreddit": None,
-                     "content": None,
-                     "num_root_comments": 0,
-                     "num_user_comments": 0,
-                     "has_deleted_user": False, 
-                     "title": None}
+                      "score": None,
+                      "subreddit": None,
+                      "content": None,
+                      "num_root_comments": 0,
+                      "num_user_comments": 0,
+                      "has_deleted_user": False,
+                      "title": None}
         self.unique_users = set()
 
         # Stats that can be gathered right off the bat
@@ -541,7 +537,6 @@ class CMVAuthSubmission:
             # pdb.set_trace()
 
         for com in comment_tree:
-            self.COMS_PARSED += 1
             if isinstance(com, praw.models.MoreComments):
                 self.parse_root_comments(com.comments())
             elif com.stickied:
@@ -576,9 +571,9 @@ class CMVAuthSubmission:
         """
         """
         info_series = pd.Series(self.stats)
-        info_series.sort_index(inplace = True)
+        info_series.sort_index(inplace=True)
         print(self.COMS_PARSED)
-        return(info_series)
+        return info_series
 
 # STATS_TEMPLATE for date, score, subreddit. Could probably include a general
 # method to update that dictionary in self.stats as well. Would also reduce
@@ -610,10 +605,10 @@ class CMVAuthComment:
         self.unique_users = set()
 
         # Stats that can be gathered right away
-        self.stats["created_utc"] = self.comment.created_utc 
+        self.stats["created_utc"] = self.comment.created_utc
         self.stats["score"] = self.comment.score
-        self.stats["subreddit"] = (self.comment.
-                submission.subreddit_name_prefixed)
+        self.stats["subreddit"] = (self.comment.submission.
+                                  subreddit_name_prefixed)
         self.stats["content"] = self.comment.body
         self.stats["edited"] = self.comment.edited
         self.stats["parent_submission"] = self.comment.submission
@@ -642,10 +637,9 @@ class CMVAuthComment:
         """
         """
         info_series = pd.Series(self.stats)
-        info_series.sort_index(inplace = True)
-        return(info_series)
+        info_series.sort_index(inplace=True)
+        return info_series
 
-    
 if __name__ == "__main__":
     SModder = CMVScraperModder(START_2016, END_2016)
 
