@@ -2,11 +2,14 @@
 File that processes the raw pickle files from the SRCC
 """
 
+import re
 import pandas as pd
 import feather
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 SID = SentimentIntensityAnalyzer()
+LINK_RE = re.compile(r"http\S*")
+
 
 def main():
     """
@@ -22,6 +25,10 @@ def main():
     cmv_auth_subs["empty"] = cmv_auth_subs.content.str.contains("^$")
     cmv_auth_subs["sentiment"] = cmv_auth_subs.content.apply(lambda text:
                                                              SID.polarity_scores(text)["compound"])
+    cmv_auth_subs["url_link"] = cmv_auth_subs.content.apply(lambda text:
+                                                            len(re.findall(LINK_RE, text)))
+    cmv_auth_subs["cmv_sub"] = cmv_auth_subs.subreddit.apply(
+        lambda subred: True if subred == "r/changemyview" else False)
 
     cmv_subs = cmv_subs.apply(pd.to_numeric, errors="ignore")
     cmv_auth_subs = cmv_auth_subs.apply(pd.to_numeric, errors="ignore")
