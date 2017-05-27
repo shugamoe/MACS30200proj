@@ -5,7 +5,7 @@ library(feather)
 library(ineq)
 library(anytime)
 library(lubridate)
-library(purrr)
+library(purrrlyr)
 
 dat_cmv_auth_subs <- read_feather("~/MACS30200proj/changemyview/cmv_auth_subs.feather") %>%
   mutate(date = anytime(created_utc))
@@ -42,7 +42,6 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
     summarise(n = n())
   
   sub_time_delta <- date_dif(submission$date, prior_subs$date)
-  
   (sub_info <- c(nrow(prior_subs),
                 mean(prior_subs$score),
                 ineq(subreddit_dist$n, type = "Gini"),
@@ -90,13 +89,13 @@ process_dat <- function(dat_cmv_subs, num_prior_days = 0, priors_only = TRUE){
            max_sub_senti = indep_var15,
            num_cmv_subs = indep_var16,
            frac_cmv_subs = indep_var17
-           )%>%
+           ) %>%
     mutate(mean_daily_sub_freq = mean_daily_sub_freq / 86400) %>%
     filter(has_priors == priors_only)
   )
 }
 
-days <- seq(0, 63, 7)
+# days <- seq(0, 63, 7)
 
-processed_dat <- map(days, ~ process_dat(dat_cmv_subs, ., priors_only = FALSE))
-saveRDS(models, "cmv_processed_dat.rds")
+processed_dat <- process_dat(dat_cmv_subs, num_prior_days = 0, priors_only = TRUE)
+saveRDS(processed_dat, "~/MACS30200proj/FinalPaper/cmv_processed_dat.rds")
