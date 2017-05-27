@@ -52,5 +52,4 @@ delta_accuracy <- CMV_DAT_TEST %>%
 auc_delta <- auc(delta_accuracy$OP_gave_delta, delta_accuracy$pred)
 
 plot(roc(delta_accuracy$OP_gave_delta, delta_accuracy$pred), 
-     main =
-       sprintf("ROC Curve for Initial Logistic Model | AUC = %.3f", auc_delta))
+     main = sprintf("ROC Curve for Initial Logistic Model | AUC = %.3f", auc_delta))
