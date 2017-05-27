@@ -194,7 +194,7 @@ class CMVScraperModder:
         submission = CMVSubmission(sub_inst)
         submission.parse_root_comments(None)
 
-        return(Submission.get_stats_series())
+        return(submission.get_stats_series())
     
     def get_author_histories(self):
         """
