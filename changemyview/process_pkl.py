@@ -62,7 +62,7 @@ def first_person_pronouns(word_tokens):
 
 
 
-def main(test = False):
+def main(test=False):
     """
     Does transformations on cmv_auth_subs.pkl and cmv_subs.pkl
     """
@@ -72,17 +72,17 @@ def main(test = False):
     cmv_auth_subs = pd.read_pickle("/home/jmcclellan/MACS30200proj/changemyview/cmv_auth_subs.pkl")
 
     # CMV Subs Processing
-    cmv_subs = cmv_subs.apply(pd.to_numeric, errors="ignore")
-    cmv_auth_subs = cmv_auth_subs.apply(pd.to_numeric, errors="ignore")
     cmv_subs = cmv_subs[cmv_subs.title.str.contains(r"\[Podcast\]") == False]
     cmv_subs["content"] = cmv_subs.content.apply(
         lambda text: re.sub(MOD_MES_RE, "", text))
     print("Tokenizing CMV submission text")
-    cmv_auth_subs["tokenized_text"] = cmv_auth_subs.content.apply(
-            lambda text: word_tokenize(text))
-    print("Retrieving First person fracs")
-    cmv_auth_subs.loc[:, sorted(["fps", "fpp", "fps_frac", "fpp_frac"])] = (
-            cmv_auth_subs.tokenized_text.apply(lambda w_tokens: first_person_pronouns(w_tokens)))
+    cmv_subs = cmv_subs.assign(**{stat: None for stat in 
+                                      ["fps", "fpp", "fps_frac", "fpp_frac"]})
+    cmv_subs["tokenized_text"] = cmv_subs.content.apply(
+        lambda text: word_tokenize(text))
+    print("Retrieving First person pronouns")
+    cmv_subs.loc[:, sorted(["fps", "fpp", "fps_frac", "fpp_frac"])] = (
+        cmv_subs.tokenized_text.apply(lambda w_tokens: first_person_pronouns(w_tokens)))
     cmv_subs["sentiment"] = cmv_subs.content.apply(lambda text:
                                                    SID.polarity_scores(text)["compound"])
 
@@ -96,11 +96,13 @@ def main(test = False):
     cmv_auth_subs["removed"] = cmv_auth_subs.content.str.contains(r"^\[removed\]$")
     cmv_auth_subs["empty"] = cmv_auth_subs.content.str.contains("^$")
     print("Tokenizing author submission text")
+    cmv_auth_subs = cmv_auth_subs.assign(**{stat: None for stat in 
+                                            ["fps", "fpp", "fps_frac", "fpp_frac"]})
     cmv_auth_subs["tokenized_text"] = cmv_auth_subs.content.apply(
-            lambda text: word_tokenize(text))
-    print("Retrieving First person fracs")
+        lambda text: word_tokenize(text))
+    print("Retrieving First person pronouns")
     cmv_auth_subs.loc[:, sorted(["fps", "fpp", "fps_frac", "fpp_frac"])] = (
-            cmv_auth_subs.tokenized_text.apply(lambda w_tokens: first_person_pronouns(w_tokens)))
+        cmv_auth_subs.tokenized_text.apply(lambda w_tokens: first_person_pronouns(w_tokens)))
     if test:
         pdb.set_trace()
     cmv_auth_subs["sentiment"] = cmv_auth_subs.content.apply(lambda text:
@@ -112,10 +114,17 @@ def main(test = False):
 
     if test:
         pdb.set_trace()
+
+    cmv_subs = cmv_subs.apply(pd.to_numeric, errors="ignore")
+    cmv_subs.drop("tokenized_text", axis=1, inplace=True)
+    cmv_auth_subs = cmv_auth_subs.apply(pd.to_numeric, errors="ignore")
+    cmv_auth_subs.drop("tokenized_text", axis=1, inplace=True)
+
     feather.write_dataframe(cmv_subs,
                             "/home/jmcclellan/MACS30200proj/changemyview/cmv_subs.feather")
     feather.write_dataframe(cmv_auth_subs,
                             "/home/jmcclellan/MACS30200proj/changemyview/cmv_auth_subs.feather")
+
 
     # For Dataviz project
     feather.write_dataframe(cmv_subs, "/home/jmcclellan/viz-shugamoe/cmv_subs.feather")
@@ -125,7 +134,7 @@ def main(test = False):
     # Process Pickle files to R data
     print("Begin processing (in R) to make data suitable for modelling.")
     subprocess.check_call(["Rscript", 
-        "/home/jmcclellan/MACS30200proj/FinalPaper/process_data.R"], shell=False)
+                           "/home/jmcclellan/MACS30200proj/FinalPaper/process_data.R"], shell=False)
     print("R Data for logistic models created.")
 
 

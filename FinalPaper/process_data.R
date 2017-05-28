@@ -42,12 +42,18 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
     summarise(n = n())
   
   sub_time_delta <- date_dif(submission$date, prior_subs$date)
-  (sub_info <- c(nrow(prior_subs),
+  prior_valid_subs <- prior_subs %>%
+    filter(removed == FALSE & empty == FALSE)
+  
+  if (any(is.na(prior_valid_subs))){
+    browser()
+  }
+  return_vec <- c(nrow(prior_subs),
                 mean(prior_subs$score),
                 ineq(subreddit_dist$n, type = "Gini"),
                 has_priors,
                 mean(prior_subs$removed),
-                mean(prior_subs$deleted),
+                5,
                 mean(prior_subs$empty),
                 mean(prior_subs$sentiment),
                 mean(sub_time_delta), 
@@ -55,12 +61,23 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
                 max(prior_subs$score),
                 sd(prior_subs$score),
                 
-                min(prior_subs$sentiment),
-                sd(prior_subs$sentiment),
-                max(prior_subs$sentiment),
+                min(prior_valid_subs$sentiment),
+                sd(prior_valid_subs$sentiment),
+                max(prior_valid_subs$sentiment),
                 prev_cmv_subs,
-                prev_cmv_subs / num_prev # Fraction of subs that are CMV
+                prev_cmv_subs / num_prev, # Fraction of subs that are CMV
+                mean(prior_valid_subs$fps),
+                mean(prior_valid_subs$fps_frac),
+                mean(prior_valid_subs$fpp),
+                mean(prior_valid_subs$fpp_frac),
+                nrow(prior_valid_subs)
                 )
+  if (any(is.na(return_vec)) && return_vec[4]){
+    if (!any(is.na(return_vec[c(12, 14)]))){
+      browser()
+    }
+  }
+  (sub_info <- return_vec
   )
 }
 
@@ -82,20 +99,23 @@ process_dat <- function(dat_cmv_subs, num_prior_days = 0, priors_only = TRUE){
            mean_sub_sentiment = indep_var8,
            mean_daily_sub_freq = indep_var9,
            min_sub_score = indep_var10,
-           max_sub_score =  indep_var11, 
+           max_sub_score =  indep_var11,
            sd_sub_score = indep_var12,
            min_sub_senti = indep_var13,
            sd_sub_senti = indep_var14,
            max_sub_senti = indep_var15,
            num_cmv_subs = indep_var16,
-           frac_cmv_subs = indep_var17
+           frac_cmv_subs = indep_var17,
+           mean_fps = indep_var18,
+           mean_fps_frac = indep_var19,
+           mean_fpp = indep_var20,
+           mean_fpp_frac = indep_var21,
+           num_valid_prior_subs = indep_var22
            ) %>%
-    mutate(mean_daily_sub_freq = mean_daily_sub_freq / 86400) %>%
-    filter(has_priors == priors_only)
+      mutate(mean_daily_sub_freq = mean_daily_sub_freq / 86400) %>%
+      filter(has_priors == priors_only)
   )
 }
-
-# days <- seq(0, 63, 7)
 
 processed_dat <- process_dat(dat_cmv_subs, num_prior_days = 0, priors_only = TRUE)
 saveRDS(processed_dat, "~/MACS30200proj/FinalPaper/cmv_processed_dat.rds")
