@@ -50,4 +50,5 @@ Utilizing a Reddit user's past submission and comment history, on the other hand
 
 Tan et al. extended self-affirmation theory as it was onto an online debate space. Utilizing an opinion author's past interactions in CMV can possibly extend self-affirmation theory itself, by looking further back in time to potential affirmation, but also shed more light on the unique characterstics of Reddit and CMV in general
 
+\newpage
 ---

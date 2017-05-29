@@ -17,6 +17,8 @@ date_dif <- function(sub_date, prev_dates){
   (date_difs <- lag_dates - prev_dates)
 }
 
+STAND_IN <- dat_cmv_auth_subs[1, ]
+
 model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
   if (num_prior_days == 0){
     time_filter <- 0
@@ -36,6 +38,11 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
   }
   
   prev_cmv_subs <- sum(prior_subs$cmv_sub)
+  if (nrow(prior_subs) != 0){
+    last_sub <- tail(prior_subs, 1)
+  } else {
+    last_sub <- STAND_IN
+  }
   
   subreddit_dist <- prior_subs %>%
     group_by(subreddit) %>%
@@ -48,7 +55,9 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
   if (any(is.na(prior_valid_subs))){
     browser()
   }
-  return_vec <- c(nrow(prior_subs),
+  
+  return_vec <- c(
+                nrow(prior_subs),
                 mean(prior_subs$score),
                 ineq(subreddit_dist$n, type = "Gini"),
                 has_priors,
@@ -60,7 +69,6 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
                 min(prior_subs$score),
                 max(prior_subs$score),
                 sd(prior_subs$score),
-                
                 min(prior_valid_subs$sentiment),
                 sd(prior_valid_subs$sentiment),
                 max(prior_valid_subs$sentiment),
@@ -70,15 +78,21 @@ model_indep_vars <- function(submission, num_prior_days, dat_cmv_auth_subs){
                 mean(prior_valid_subs$fps_frac),
                 mean(prior_valid_subs$fpp),
                 mean(prior_valid_subs$fpp_frac),
-                nrow(prior_valid_subs)
+                nrow(prior_valid_subs),
+                last_sub$score,
+                last_sub$empty,
+                last_sub$fps,
+                last_sub$fps_frac,
+                last_sub$created_utc,
+                last_sub$fpp,
+                last_sub$fpp_frac,
+                last_sub$cmv_sub,
+                last_sub$removed,
+                last_sub$sentiment,
+                as.numeric(submission$created_utc - last_sub$created_utc),
+                mean(prior_valid_subs$num_words)
                 )
-  if (any(is.na(return_vec)) && return_vec[4]){
-    if (!any(is.na(return_vec[c(12, 14)]))){
-      browser()
-    }
-  }
-  (sub_info <- return_vec
-  )
+  (sub_info <- return_vec)
 }
 
 # This function creates the model data
@@ -110,7 +124,19 @@ process_dat <- function(dat_cmv_subs, num_prior_days = 0, priors_only = TRUE){
            mean_fps_frac = indep_var19,
            mean_fpp = indep_var20,
            mean_fpp_frac = indep_var21,
-           num_valid_prior_subs = indep_var22
+           num_valid_prior_subs = indep_var22,
+           ls_score = indep_var23,
+           ls_empty = indep_var24,
+           ls_fps = indep_var25,
+           ls_fps_frac = indep_var26,
+           ls_created_utc = indep_var27,
+           ls_fpp = indep_var28,
+           ls_fpp_frac = indep_var29,
+           ls_cmv_sub = indep_var30,
+           ls_removed = indep_var31,
+           ls_sentiment = indep_var32,
+           time_since_ls = indep_var33,
+           mean_num_words = indep_var34
            ) %>%
       mutate(mean_daily_sub_freq = mean_daily_sub_freq / 86400) %>%
       filter(has_priors == priors_only)
