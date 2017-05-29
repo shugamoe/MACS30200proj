@@ -9,6 +9,7 @@ library(doMC)
 library(modelr)
 library(stringr)
 library(tidytext)
+library(perm)
 
 registerDoMC(2)
 theme_set(theme_minimal())
@@ -94,13 +95,13 @@ ctrl2 <- trainControl(method = "repeatedcv", number = 5, repeats = 5,
                      classProbs  = TRUE, search = "random")
 
 model2 <- train(OP_gave_delta ~ . + num_prior_subs:mean_sub_score + 
-                  num_prior_subs:mean_rm_subs + num_prior_subs:frac_cmv_subs,
+                  num_prior_subs:mean_rm_subs,
                 data = CMV_DAT_TRAIN,
                 method = "glm",
                 metric = "ROC",
                 trControl = ctrl2)
 
-model2b <- train(OP_gave_delta ~ num_words,
+model2base <- train(OP_gave_delta ~ 1 + num_words,
                  data = CMV_DAT_TRAIN,
                  method = "glm",
                  metric = "ROC",
@@ -140,7 +141,7 @@ graph_roc <- function(model, test_dat = CMV_DAT_TEST){
 
 
 model_post <- train(OP_gave_delta ~ . + num_prior_subs:mean_sub_score + 
-                  num_prior_subs:mean_rm_subs + num_prior_subs:frac_cmv_subs,
+                  num_prior_subs:mean_rm_subs,
                 data = POST_TRAIN,
                 method = "glm",
                 metric = "ROC",
@@ -152,18 +153,18 @@ model_post <- train(OP_gave_delta ~ . + num_prior_subs:mean_sub_score +
 # graph_roc(model1)
 results_dat <- list(
   model2 = model2,
-  model2b = model2b,
+  model2base = model2base,
   model_post = model_post,
   model2_dat = model_auc(model2),
-  model2b_dat = model_auc(model2b),
+  model2base_dat = model_auc(model2base),
   model_post_dat = model_auc(model_post, POST_TEST)
 )
 
 saveRDS(results_dat, "~/MACS30200proj/FinalPaper/results.rds")
 
 graph_roc(model2)
-graph_roc(model2b)
-graph_roc(model_post)
+graph_roc(model2base)
+graph_roc(model_post, POST_TEST)
 # graph_roc(model3)
 
 
