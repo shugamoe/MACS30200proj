@@ -14,7 +14,7 @@ library(perm)
 registerDoMC(2)
 theme_set(theme_minimal())
 
-# Data preprocessing
+# Data preProcessing
 
 CMV_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
   distinct(author, .keep_all = TRUE) %>% # One author only
@@ -32,6 +32,28 @@ CMV_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
   dplyr::select(-starts_with("sd_"), -starts_with("max_"), -starts_with("min_")) %>%
   drop_na() %>%
   mutate(created_utc = created_utc / 86400) %>%
+  rename(`(O) Creation Time` = created_utc,
+         `(O) Opinion Change?` = OP_gave_delta,
+         `(O) # Words` = num_words,
+         `(O) Topic #` = kmeans_topic,
+         `(O) Sentiment` = sentiment,
+         `(O) Singular First Person Pronouns` = fps,
+         `(O) Plural First Person Pronouns` = fpp,
+         `(AH) # All Prior Submissions` = num_prior_subs,
+         `(AH) # Submissions with Available Content` = num_valid_prior_subs,
+         `(AH) Daily Submission Frequency` = mean_daily_sub_freq,
+         `(AH) Mean Number of Words` = mean_num_words,
+         `(AH) Mean Submission Score` = mean_sub_score,
+         `(AH) Subreddit Gini Index` = gini_index,
+         `(AH) Fraction Empty Submissions` = mean_empty_subs,
+         `(AH) Fraction Removed Submissions` = mean_rm_subs,
+         `(AH) Mean Submission Sentiment` = mean_sub_sentiment,
+         `(AH) Number of CMV Submissions` = num_cmv_subs,
+         `(AH) Mean Plural First Person Pronouns` = mean_fpp,
+         `(AH) Fraction Plural First Person Pronouns` = mean_fpp_frac,
+         `(AH) Mean Singular First Person Pronouns` = mean_fps,
+         `(AH) Fraction Singular First Person Pronouns` = mean_fps_frac
+         ) %>%
   as.data.frame()
 # for (i in 1:length(CMV_DAT)){
 #   print(i)
@@ -59,11 +81,35 @@ CMV_DAT_POST <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
   dplyr::select(-starts_with("sd_"), -starts_with("max_"), -starts_with("min_")) %>%
   drop_na() %>%
   mutate(created_utc = created_utc / 86400) %>%
+  rename(`(O) Creation Time` = created_utc,
+         `(O) Opinion Change?` = OP_gave_delta,
+         `(O) # Words` = num_words,
+         `(O) Topic #` = kmeans_topic,
+         `(O) Sentiment` = sentiment,
+         `(O) Singular First Person Pronouns` = fps,
+         `(O) Plural First Person Pronouns` = fpp,
+         `(AH) # All Prior Submissions` = num_prior_subs,
+         `(AH) # Submissions with Available Content` = num_valid_prior_subs,
+         `(AH) Daily Submission Frequency` = mean_daily_sub_freq,
+         `(AH) Mean Number of Words` = mean_num_words,
+         `(AH) Mean Submission Score` = mean_sub_score,
+         `(AH) Subreddit Gini Index` = gini_index,
+         `(AH) Fraction Empty Submissions` = mean_empty_subs,
+         `(AH) Fraction Removed Submissions` = mean_rm_subs,
+         `(AH) Mean Submission Sentiment` = mean_sub_sentiment,
+         `(AH) Number of CMV Submissions` = num_cmv_subs,
+         `(AH) Mean Plural First Person Pronouns` = mean_fpp,
+         `(AH) Fraction Plural First Person Pronouns` = mean_fpp_frac,
+         `(AH) Mean Singular First Person Pronouns` = mean_fps,
+         `(AH) Fraction Singular First Person Pronouns` = mean_fps_frac
+         ) %>%
   as.data.frame()
 
+num_folds <- 10
+num_repeats <- 100
 
 set.seed(69)
-train_index <- createDataPartition(CMV_DAT$OP_gave_delta, p = .8,
+train_index <- createDataPartition(CMV_DAT$`(O) Opinion Change?`, p = 1,
                                   list = FALSE,
                                   times = 1)
 CMV_DAT_TRAIN <- CMV_DAT[train_index, ]
@@ -78,33 +124,45 @@ train_y <- CMV_DAT_TRAIN$OP_gave_delta
 
 Grid1 <- expand.grid(list(nIter = seq(50, 300, 10)))
 
-ctrl1 <- trainControl(method = "repeatedcv", number = 5, repeats = 5,
+ctrl1 <- trainControl(method = "repeatedcv", number = num_folds, repeats = num_repeats,
                      summaryFunction = twoClassSummary,
+                     returnResamp = "all",
                      classProbs  = TRUE, search = "random")
 
 
-model1 <- train(OP_gave_delta ~ .,
+model1 <- train(`(O) Opinion Change?`~ .,
                data = CMV_DAT_TRAIN,
                method = "LogitBoost",
+               preProcess = c("center", "scale"),
                trControl = ctrl1,
                tuneGrid = Grid1,
                metric = "ROC")
 
-ctrl2 <- trainControl(method = "repeatedcv", number = 5, repeats = 5,
+ctrl2 <- trainControl(method = "repeatedcv", number = num_folds, repeats = num_repeats,
                      summaryFunction = twoClassSummary,
+                     returnResamp = "all",
                      classProbs  = TRUE, search = "random")
 
-model2 <- train(OP_gave_delta ~ . + num_prior_subs:mean_sub_score + 
-                  num_prior_subs:mean_rm_subs,
+model2_no_int <- train(`(O) Opinion Change?` ~ .,
                 data = CMV_DAT_TRAIN,
                 method = "glm",
                 metric = "ROC",
+                preProcess = c("center", "scale"),
                 trControl = ctrl2)
 
-model2base <- train(OP_gave_delta ~ 1 + num_words,
+model2 <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
+                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions`,
+                data = CMV_DAT_TRAIN,
+                method = "glm",
+                metric = "ROC",
+                preProcess = c("center", "scale"),
+                trControl = ctrl2)
+
+model2base <- train(`(O) Opinion Change?` ~ 1 + `(O) # Words`,
                  data = CMV_DAT_TRAIN,
                  method = "glm",
                  metric = "ROC",
+                preProcess = c("center", "scale"),
                  trControl = ctrl2)
 
 
@@ -124,27 +182,48 @@ Grid4 <- expand.grid(list(cp = "aic", lambda = seq(.0001, .1, .001)))
 model_auc <- function(model, test_dat = CMV_DAT_TEST){
   dat_with_preds <- test_dat %>%
     add_predictions(model) %>%
-    mutate(OP_gave_delta = ifelse(OP_gave_delta == "stable", 0, 1),
+    mutate(`(O) Opinion Change?` = ifelse(`(O) Opinion Change?`== "stable", 0, 1),
            pred = ifelse(pred == "stable", 0, 1))
   
-  list(dat = dat_with_preds, auc = auc(dat_with_preds$OP_gave_delta,
+  list(dat = dat_with_preds, auc = auc(dat_with_preds$`(O) Opinion Change?`,
                                        dat_with_preds$pred))
 }
 
-graph_roc <- function(model, test_dat = CMV_DAT_TEST){
+graph_roc <- function(model, test_dat = CMV_DAT_TEST, title = FALSE){
   graph_dat <- model_auc(model, test_dat)  
-  plot(roc(graph_dat[["dat"]]$OP_gave_delta, graph_dat[["dat"]]$pred),
+  
+  if (title){
+    main_lab = title
+  } else{
+    main_lab = sprintf("%s | AUC = %.3f", model$method, graph_dat[["auc"]])
+  }
+  plot(roc(graph_dat[["dat"]]$`(O) Opinion Change?`, graph_dat[["dat"]]$pred),
            xlim = c(1, 0),
-           main = sprintf("%s | AUC = %.3f", model$method,
-                         graph_dat[["auc"]]))
+           main = main_lab)
 }
 
 
-model_post <- train(OP_gave_delta ~ . + num_prior_subs:mean_sub_score + 
-                  num_prior_subs:mean_rm_subs,
+model_post <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
+                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions`,
                 data = POST_TRAIN,
                 method = "glm",
                 metric = "ROC",
+                preProcess = c("center", "scale"),
+                trControl = ctrl2)
+
+model_tonly <- train(`(O) Opinion Change?` ~ `(O) Creation Time`,
+                  data = CMV_DAT_TRAIN,
+                  method = "glm",
+                  metric = "ROC",
+                  preProcess = c("center", "scale"),
+                  trControl = ctrl2)
+
+model2_no_time <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
+                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions`,
+                data = CMV_DAT_TRAIN %>% select(-`(O) Creation Time`),
+                method = "glm",
+                metric = "ROC",
+                preProcess = c("center", "scale"),
                 trControl = ctrl2)
 
 # glm_dat <- auc_conf_int("glm")
@@ -153,24 +232,34 @@ model_post <- train(OP_gave_delta ~ . + num_prior_subs:mean_sub_score +
 # graph_roc(model1)
 results_dat <- list(
   model2 = model2,
+  model2_no_int = model2_no_int,
+  model2_no_time = model2_no_time,
   model2base = model2base,
   model_post = model_post,
-  model2_dat = model_auc(model2),
-  model2base_dat = model_auc(model2base),
-  model_post_dat = model_auc(model_post, POST_TEST)
+  model_tonly = model_tonly
 )
 
-saveRDS(results_dat, "~/MACS30200proj/FinalPaper/results.rds")
+# Resample ROC results can be found in model$resample
 
-graph_roc(model2)
-graph_roc(model2base)
-graph_roc(model_post, POST_TEST)
+saveRDS(results_dat, "~/MACS30200proj/FinalPaper/results_mult_auths.rds")
+
+tibble(x = 1:100, y = model2$resample$ROC) %>%
+  ggplot(aes(x, y)) +
+    geom_line() +
+    geom_smooth()
+
+# Trash
+# ================================================================================
+# ================================================================================
+# ================================================================================
+# ================================================================================
+
+# graph_roc(model2)
+# graph_roc(model2base)
+# graph_roc(model2_no_int)
+# graph_roc(model_tonly)
+# graph_roc(model_post, POST_TEST)
 # graph_roc(model3)
-
-
-
-
-
 
 # delta_accuracy <- CMV_DAT_TEST %>%
 #   add_predictions(model) %>%
