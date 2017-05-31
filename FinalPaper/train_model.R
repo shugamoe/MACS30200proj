@@ -11,11 +11,12 @@ library(stringr)
 library(tidytext)
 library(perm)
 
-registerDoMC(2)
+registerDoMC(3)
 theme_set(theme_minimal())
 
 # Data preProcessing
-
+ALL_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
+  filter(!str_detect(title, "Fresh Topic Friday")) 
 CMV_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
   distinct(author, .keep_all = TRUE) %>% # One author only
   filter(!str_detect(title, "Fresh Topic Friday")) %>% # Take out meta posts
@@ -38,7 +39,9 @@ CMV_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
          `(O) Topic #` = kmeans_topic,
          `(O) Sentiment` = sentiment,
          `(O) Singular First Person Pronouns` = fps,
+         `(O) Fraction Singular First Person Pronouns` = fps_frac,
          `(O) Plural First Person Pronouns` = fpp,
+         `(O) Fraction Plural First Person Pronouns` = fpp_frac,
          `(AH) # All Prior Submissions` = num_prior_subs,
          `(AH) # Submissions with Available Content` = num_valid_prior_subs,
          `(AH) Daily Submission Frequency` = mean_daily_sub_freq,
@@ -49,6 +52,7 @@ CMV_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
          `(AH) Fraction Removed Submissions` = mean_rm_subs,
          `(AH) Mean Submission Sentiment` = mean_sub_sentiment,
          `(AH) Number of CMV Submissions` = num_cmv_subs,
+         `(AH) Fraction of CMV Submissions` = frac_cmv_subs,
          `(AH) Mean Plural First Person Pronouns` = mean_fpp,
          `(AH) Fraction Plural First Person Pronouns` = mean_fpp_frac,
          `(AH) Mean Singular First Person Pronouns` = mean_fps,
@@ -87,7 +91,12 @@ CMV_DAT_POST <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
          `(O) Topic #` = kmeans_topic,
          `(O) Sentiment` = sentiment,
          `(O) Singular First Person Pronouns` = fps,
+         `(O) Fraction Singular First Person Pronouns` = fps_frac,
          `(O) Plural First Person Pronouns` = fpp,
+         `(O) Fraction Plural First Person Pronouns` = fpp_frac,
+         `(Post) # OP Comments` = num_OP_comments,
+         `(Post) # Direct Comments` = num_root_comments,
+         `(Post) # Total Comments` = num_user_comments,
          `(AH) # All Prior Submissions` = num_prior_subs,
          `(AH) # Submissions with Available Content` = num_valid_prior_subs,
          `(AH) Daily Submission Frequency` = mean_daily_sub_freq,
@@ -98,6 +107,7 @@ CMV_DAT_POST <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
          `(AH) Fraction Removed Submissions` = mean_rm_subs,
          `(AH) Mean Submission Sentiment` = mean_sub_sentiment,
          `(AH) Number of CMV Submissions` = num_cmv_subs,
+         `(AH) Fraction of CMV Submissions` = frac_cmv_subs,
          `(AH) Mean Plural First Person Pronouns` = mean_fpp,
          `(AH) Fraction Plural First Person Pronouns` = mean_fpp_frac,
          `(AH) Mean Singular First Person Pronouns` = mean_fps,
@@ -105,10 +115,12 @@ CMV_DAT_POST <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
          ) %>%
   as.data.frame()
 
-num_folds <- 10
-num_repeats <- 100
+saveRDS(CMV_DAT_POST, "~/MACS30200proj/Poster/final_data.rds")
+saveRDS(CMV_DAT_POST, "~/MACS30200proj/FinalPaper/final_data.rds")
 
-set.seed(69)
+num_folds <- 10
+num_repeats <- 20
+
 train_index <- createDataPartition(CMV_DAT$`(O) Opinion Change?`, p = 1,
                                   list = FALSE,
                                   times = 1)
@@ -130,40 +142,28 @@ ctrl1 <- trainControl(method = "repeatedcv", number = num_folds, repeats = num_r
                      classProbs  = TRUE, search = "random")
 
 
-model1 <- train(`(O) Opinion Change?`~ .,
-               data = CMV_DAT_TRAIN,
-               method = "LogitBoost",
-               preProcess = c("center", "scale"),
-               trControl = ctrl1,
-               tuneGrid = Grid1,
-               metric = "ROC")
+set.seed(69)
+# model1 <- train(`(O) Opinion Change?`~ .,
+#                data = CMV_DAT_TRAIN,
+#                method = "LogitBoost",
+#                preProcess = c("center", "scale"),
+#                trControl = ctrl1,
+#                tuneGrid = Grid1,
+#                metric = "ROC")
 
 ctrl2 <- trainControl(method = "repeatedcv", number = num_folds, repeats = num_repeats,
                      summaryFunction = twoClassSummary,
                      returnResamp = "all",
                      classProbs  = TRUE, search = "random")
 
-model2_no_int <- train(`(O) Opinion Change?` ~ .,
-                data = CMV_DAT_TRAIN,
-                method = "glm",
-                metric = "ROC",
-                preProcess = c("center", "scale"),
-                trControl = ctrl2)
+set.seed(69)
+# model2_no_int <- train(`(O) Opinion Change?` ~ .,
+#                 data = CMV_DAT_TRAIN,
+#                 method = "glm",
+#                 metric = "ROC",
+#                 preProcess = c("center", "scale"),
+#                 trControl = ctrl2)
 
-model2 <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
-                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions`,
-                data = CMV_DAT_TRAIN,
-                method = "glm",
-                metric = "ROC",
-                preProcess = c("center", "scale"),
-                trControl = ctrl2)
-
-model2base <- train(`(O) Opinion Change?` ~ 1 + `(O) # Words`,
-                 data = CMV_DAT_TRAIN,
-                 method = "glm",
-                 metric = "ROC",
-                preProcess = c("center", "scale"),
-                 trControl = ctrl2)
 
 
 # Grid3 <- expand.grid(mtry = seq(10, 300, 10))
@@ -201,16 +201,37 @@ graph_roc <- function(model, test_dat = CMV_DAT_TEST, title = FALSE){
            xlim = c(1, 0),
            main = main_lab)
 }
+set.seed(69)
+model2 <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
+                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions` + 
+                  `(AH) # All Prior Submissions`:`(AH) Mean Singular First Person Pronouns` + 
+                  `(AH) # All Prior Submissions`:`(AH) Mean Plural First Person Pronouns`,
+                data = CMV_DAT_TRAIN,
+                method = "glm",
+                metric = "ROC",
+                preProcess = c("center", "scale"),
+                trControl = ctrl2)
 
+set.seed(69)
+model2base <- train(`(O) Opinion Change?` ~ 1 + `(O) # Words`,
+                 data = CMV_DAT_TRAIN,
+                 method = "glm",
+                 metric = "ROC",
+                preProcess = c("center", "scale"),
+                 trControl = ctrl2)
 
+set.seed(69)
 model_post <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
-                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions`,
+                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions` + 
+                  `(AH) # All Prior Submissions`:`(AH) Mean Singular First Person Pronouns` +  
+                  `(AH) # All Prior Submissions`:`(AH) Mean Plural First Person Pronouns`,
                 data = POST_TRAIN,
                 method = "glm",
                 metric = "ROC",
                 preProcess = c("center", "scale"),
                 trControl = ctrl2)
 
+set.seed(69)
 model_tonly <- train(`(O) Opinion Change?` ~ `(O) Creation Time`,
                   data = CMV_DAT_TRAIN,
                   method = "glm",
@@ -218,8 +239,11 @@ model_tonly <- train(`(O) Opinion Change?` ~ `(O) Creation Time`,
                   preProcess = c("center", "scale"),
                   trControl = ctrl2)
 
+set.seed(69)
 model2_no_time <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submissions`:`(AH) Mean Submission Score` 
-                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions`,
+                    + `(AH) # All Prior Submissions`:`(AH) Fraction Removed Submissions` + 
+                  `(AH) # All Prior Submissions`:`(AH) Mean Singular First Person Pronouns` + 
+                  `(AH) # All Prior Submissions`:`(AH) Mean Plural First Person Pronouns`,
                 data = CMV_DAT_TRAIN %>% select(-`(O) Creation Time`),
                 method = "glm",
                 metric = "ROC",
@@ -232,7 +256,7 @@ model2_no_time <- train(`(O) Opinion Change?` ~ . + `(AH) # All Prior Submission
 # graph_roc(model1)
 results_dat <- list(
   model2 = model2,
-  model2_no_int = model2_no_int,
+  # model2_no_int = model2_no_int,
   model2_no_time = model2_no_time,
   model2base = model2base,
   model_post = model_post,
@@ -241,9 +265,9 @@ results_dat <- list(
 
 # Resample ROC results can be found in model$resample
 
-saveRDS(results_dat, "~/MACS30200proj/FinalPaper/results_mult_auths.rds")
+saveRDS(results_dat, "~/MACS30200proj/FinalPaper/results.rds")
 
-tibble(x = 1:100, y = model2$resample$ROC) %>%
+tibble(x = 1:(num_repeats * num_folds), y = model2$resample$ROC) %>%
   ggplot(aes(x, y)) +
     geom_line() +
     geom_smooth()
