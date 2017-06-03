@@ -1,0 +1,393 @@
+---
+title: "Opinion Malleability In r/ChangeMyView :"
+subtitle: "Self-affirmation Theory and Submission Behavior"
+author: "Julian McClellan"
+date: "Due 4/22/17"
+output:
+  pdf_document:
+    includes:
+      in_header:
+        header.tex
+      number_sections: true
+fontsize: 12pt
+bibliography: citations.bib
+geometry: margin=1in
+documentclass: article
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE,
+                      echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(stringr)
+library(anytime)
+library(stargazer)
+theme_set(theme_minimal())
+
+source("~/MACS30200proj/FinalPaper/present_models.R")
+RAW_ALL_DAT <- readRDS("~/MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
+  filter(!str_detect(title, "Fresh Topic Friday"))
+
+CMV_DAT <- readRDS("~/MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
+  distinct(author, .keep_all = TRUE) %>% # One author only
+  filter(!str_detect(title, "Fresh Topic Friday")) %>% # Take out meta posts
+  # filter(num_OP_comments >= 1 & num_user_comments >= 10) %>% # Filtering procedure of Tan et al.
+  mutate(OP_gave_delta = factor(OP_gave_delta, labels = c("stable", "changed")),
+         created_utc = as.numeric(created_utc)) %>%
+  filter(num_user_comments > 0) %>%
+  dplyr::select(-c(author, num_deltas_from_OP, num_user_comments, href, date,
+            has_priors, id, content, num_OP_comments, num_root_comments,
+            title, mean_dl_subs)) %>% # No variation in deleted submissions
+  # Last Submission statistics removal
+  dplyr::select(-c(ls_score, ls_fps, ls_created_utc, ls_fpp_frac, ls_removed, time_since_ls,
+                   ls_fps_frac, ls_cmv_sub, ls_fpp, ls_sentiment, ls_empty, ls_fpp)) %>%
+  # dplyr::select(-c(created_utc, ls_created_utc)) %>% # time removal
+  dplyr::select(-starts_with("sd_"), -starts_with("max_"), -starts_with("min_")) %>%
+  drop_na() %>%
+  mutate(created_utc = created_utc / 86400) %>%
+  dplyr::rename(`(Pre Debate) Creation Time` = created_utc,
+         `(Post Debate) Opinion Change?` = OP_gave_delta,
+         `(Pre Debate) # Words` = num_words,
+         `(Pre Debate) Sentiment` = sentiment,
+         `(Pre Debate) Singular First Person Pronouns` = fps,
+         `(Pre Debate) Fraction Singular First Person Pronouns` = fps_frac,
+         `(Pre Debate) Plural First Person Pronouns` = fpp,
+         `(Pre Debate) Fraction Plural First Person Pronouns` = fpp_frac,
+         `(AH) # All Prior Submissions` = num_prior_subs,
+         `(AH) # Submissions with Available Content` = num_valid_prior_subs,
+         `(AH) Daily Submission Frequency` = mean_daily_sub_freq,
+         `(AH) Mean Number of Words` = mean_num_words,
+         `(AH) Mean Submission Score` = mean_sub_score,
+         `(AH) Subreddit Gini Index` = gini_index,
+         `(AH) Fraction Empty Submissions` = mean_empty_subs,
+         `(AH) Fraction Removed Submissions` = mean_rm_subs,
+         `(AH) Mean Submission Sentiment` = mean_sub_sentiment,
+         `(AH) Number of CMV Submissions` = num_cmv_subs,
+         `(AH) Fraction of CMV Submissions` = frac_cmv_subs,
+         `(AH) Mean Plural First Person Pronouns` = mean_fpp,
+         `(AH) Fraction Plural First Person Pronouns` = mean_fpp_frac,
+         `(AH) Mean Singular First Person Pronouns` = mean_fps,
+         `(AH) Fraction Singular First Person Pronouns` = mean_fps_frac
+         ) %>%
+  select(-kmeans_topic) %>%
+  as.data.frame()
+
+CMV_DAT_POST <- readRDS("~/MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
+  distinct(author, .keep_all = TRUE) %>% # One author only
+  filter(num_user_comments > 0) %>%
+  filter(!str_detect(title, "Fresh Topic Friday")) %>% # Take out meta posts
+  # filter(num_OP_comments >= 1 & num_user_comments >= 10) %>% # Filtering procedure of Tan et al.
+  mutate(OP_gave_delta = factor(OP_gave_delta, labels = c("stable", "changed")),
+         created_utc = as.numeric(created_utc)) %>%
+  dplyr::select(-c(author, num_deltas_from_OP, href, date,
+            has_priors, id, content,
+            title, mean_dl_subs)) %>% # No variation in deleted submissions
+  # Last Submission statistics removal
+  dplyr::select(-c(ls_score, ls_fps, ls_created_utc, ls_fpp_frac, ls_removed, time_since_ls,
+                   ls_fps_frac, ls_cmv_sub, ls_fpp, ls_sentiment, ls_empty, ls_fpp)) %>%
+  # dplyr::select(-c(created_utc, ls_created_utc)) %>% # time removal
+  dplyr::select(-starts_with("sd_"), -starts_with("max_"), -starts_with("min_")) %>%
+  drop_na() %>%
+  mutate(created_utc = created_utc / 86400) %>%
+  dplyr::rename(`(Pre Debate) Creation Time` = created_utc,
+         `(Post Debate) Opinion Change?` = OP_gave_delta,
+         `(Pre Debate) # Words` = num_words,
+         `(Pre Debate) Sentiment` = sentiment,
+         `(Pre Debate) Singular First Person Pronouns` = fps,
+         `(Pre Debate) Fraction Singular First Person Pronouns` = fps_frac,
+         `(Pre Debate) Plural First Person Pronouns` = fpp,
+         `(Pre Debate) Fraction Plural First Person Pronouns` = fpp_frac,
+         `(Post Debate) # OP Comments` = num_OP_comments,
+         `(Post Debate) # Direct Comments` = num_root_comments,
+         `(Post Debate) # Total Comments` = num_user_comments,
+         `(AH) # All Prior Submissions` = num_prior_subs,
+         `(AH) # Submissions with Available Content` = num_valid_prior_subs,
+         `(AH) Daily Submission Frequency` = mean_daily_sub_freq,
+         `(AH) Mean Number of Words` = mean_num_words,
+         `(AH) Mean Submission Score` = mean_sub_score,
+         `(AH) Subreddit Gini Index` = gini_index,
+         `(AH) Fraction Empty Submissions` = mean_empty_subs,
+         `(AH) Fraction Removed Submissions` = mean_rm_subs,
+         `(AH) Mean Submission Sentiment` = mean_sub_sentiment,
+         `(AH) Number of CMV Submissions` = num_cmv_subs,
+         `(AH) Fraction of CMV Submissions` = frac_cmv_subs,
+         `(AH) Mean Plural First Person Pronouns` = mean_fpp,
+         `(AH) Fraction Plural First Person Pronouns` = mean_fpp_frac,
+         `(AH) Mean Singular First Person Pronouns` = mean_fps,
+         `(AH) Fraction Singular First Person Pronouns` = mean_fps_frac
+         ) %>%
+  select(-kmeans_topic) %>%
+  as.data.frame()
+```
+
+## Introduction
+
+The popular social media site, Reddit, is composed of a variety of subcommunities, or
+"subreddits". One such subreddit, r/ChangeMyView (CMV): 
+
+> . . . is a subreddit dedicated to the civil discourse of opinions, and is built
+around the idea that in order to resolve our differences, we must first
+understand them. We believe that productive conversation requires respect and
+openness, and that certitude is the enemy of understanding.
+
+Participants 
+
+## Literature Review
+
+#### Persuasion
+
+Tan et al. explored persuasion in r/ChangeMyView, an area of the popular
+social media website Reddit [-@tan2016winning]. CMV is particularly conducive to
+the study of mass interpersonal persuasion, as posters must state the reasoning
+behind their views, and successful arguments must be awarded with explicit
+confirmation. Thus, the outcome of the persuasion efforts, reasoning behind
+people's views, and the full interactions are accessible.
+
+With access to this information, Tan et al. focused primarily on how interaction
+dynamics and choice of language within arguments were associated with a
+successful change in someone's opinion. A third focus of the study was an
+attempt to determine the malleability of an opinion, i.e. the likelihood that
+the holder of that opinion would award successful arguments to change it.
+Assuming that at least 10 unique challengers to the opinion were present, and
+that the holder of the opinion responded at least once, Tan et al. analyzed the
+way in which the opinion was presented and attempted to predict whether or not
+it could be changed.
+
+This last task, attempting to determine the malleability of an opinion without
+respect to any of the arguments attempting to change it, was difficult indeed,
+and Tan et al. only achieved an out of sample ROC of `.54`. Still, using weighted logistic
+regression, they found some significant features consistent with
+self-affirmation theory [@cohen2000beliefs; @correll2004affirmed].
+
+#### Self-Affirmation Theory
+
+In psychology, self-affirmation, which can be thought to reinforce one's global
+sense of self-worth, has been found to indicate open-mindedness and make beliefs
+more likely to yield [@correll2004affirmed; @cohen2000beliefs].
+
+Tan et al. found that within the text of an opinion, the use of first person
+pronouns were strong indicators of malleability, but first person plural
+pronouns correlated with resistance.
+
+> "[I]ndividualizing one's relationship with a belief using the first person
+pronouns affirms the self, while first person plurals can indicate a dilluted
+sense of group responsibility for the view."
+
+[@tan2016winning]
+
+While Tan et al. attempted to derive the level of self-affirmation present
+within the stating of an opinion, the user stating that opinion can have other
+sources of self-affirmation. Returning to Correll:
+
+> "[I]f global self-worth is temporarily bolstered by success in a second,
+unrelated domain, the individual should be more willing to tolerate a threat to
+the domain of interest."
+
+Looking at the wording of the opinion itself is a related domain, but it is
+reasonable to assume that if a Redditor has previous submission history, that
+some of that history is unrelated to the opinion they are presenting for change
+in CMV. Additionally, self-affirmation theory does not restrict the source of
+bolstering one's global self-worth; it can be self-affirmation or affirmation
+from third parties.
+
+Thus, within past submissions one can look at the same features as
+Tan et al., first person singular and plural pronouns for self-affirmation, but
+also for features that are indicative of third party affirmation, like the
+score, given by other users, of submission in question.
+
+All of a Reddit user's past submission history is available for perusal.
+Exploring the affirming nature of this history allows a deeper testing
+of self-affirmation theory, as a lab experiment can only really test the history
+created within the lab settings itself. Cohen et. al (2000), for example. . .
+
+> . . . asked half of their participants to write a paragraph about an important
+value (to affirm their sense of self-worth) before exposing them to arguments
+that challenged their views on capital punishment or abortion. Compared with
+control participants who wrote about less important values, those who wrote
+about a central value were more willing to recognize the strengths of the
+challenging argument.
+
+Utilizing a Reddit user's past submission history, on the other
+hand, not only allows a more extended look into instances in which self and
+third party affirmation may have occurred, but it also provides instances of
+participation with the community that the view is being exposed to. If a Reddit
+user posited their opinion to CMV, but also had previous submissions within the
+CMV community, then that participation would be relevant, but previous
+participation in other subreddits can also be more or less relevant as well. CMV
+does not establish any barriers (besides following the subreddit rules), against
+first-time participation from other Reddit users new to CMV. If a user posts an
+opinion on CMV, but has also attempted to change an opinion on CMV, then it's
+possible that these attempts may or may not have changed the view (receiving or
+not receiving explicit recognition).
+
+Tan et al. extended the study of self-affirmation theory into an online debate
+space. Utilizing an opinion author's past submission in Reddit can possibly
+extend self-affirmation theory itself, by looking further back in time to
+potential affirmation, but also help determine the properties of malleable opinions 
+and open minded authors.
+
+## Data
+
+Using the [Python Reddit API Wrapper (PRAW)](http://praw.readthedocs.io/en/latest/) the data was collected from the subreddit,
+[r/ChangeMyView](https://reddit.com/r/ChangeMyView), and specific Reddit user
+histories. All `5,761` views posted in 2016 were gathered,
+and the complete submission histories of the `4,142` unique authors in 2016 
+were also gathered. For each submission data was collected on "Pre Debate"
+features, i.e. those features that can be gathered as soon as a view was posted
+to the subreddit. These include the creation time of the submission, the number
+of words it contains, excluding the title,
+the sentiment of the submission, as measured by Valence Aware Dictionary and
+Sentiment Reasoner (VADER), the raw number of singular and plural first person
+pronouns were collected, as well as the fraction of the total words they
+comprised. A few "Post Debate" features were
+also gathered. These are the number of comments the OP made on their own
+submission, the number of direct replies to the OP's opinion, the
+total number of user comments in the post, and to provide an accurate classification of a stable or changed opinion, whether or not
+the OP gave a delta. A timeline of opinion stability and change for 2016 is given below and an web application for exploring the dataset
+is available [here.](https://shugamoe.shinyapps.io/mcclellan_julian_dataviz_proj/)
+
+```{r timeline}
+ggplot(RAW_ALL_DAT, aes(date, color = OP_gave_delta)) +
+  # A day is 86400 in UTC epoch
+  geom_freqpoly(binwidth = 86400 * 7, pad = FALSE) + 
+  scale_color_manual(labels = c("Stable", "Change"),
+                     values = c("red", "green")) + 
+  # scale_y_continuous(labels = scales::percent) +
+  labs(title = sprintf("5,761 Opinions in 2016", nrow(RAW_ALL_DAT)),
+       subtitle = "1 Week Smoothing",
+       x = "Date",
+       y = "# Submissions",
+       color = "Opinion changed?"
+       ) + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+However, the majority of features concern an OP's "Author History", concerning
+their submission history prior to posting on r/ChangeMyView. In general, these
+features are either aggregate statistics, like the total number of
+singular/plural first person pronouns, or mean statistics, and often there are
+aggregate and mean versions of similar features, like the mean number/fraction
+of first person pronouns used in prior submissions. Many author history
+features, such as first person pronouns and submission score are related to
+self-affirmation, whereas other features are miscellaneous Reddit statistics,
+like the number of removed or empty submissions an author has. Since an empty or
+removed submission obfuscates the collection of pronoun or sentiment features,
+these occurrences are explicitly tracked.
+
+#### Data Filtering
+
+As seen above, there were more submission made to r/ChangeMyView (`5,761`) than there are unique authors (`4,142`) in 2016.
+Thus, the use of a linear model to predict an opinion change will see
+multicollinearity across multiple posts by the same authors. To eliminate this,
+the data is filtered so that only the first submission an author made in 2016 is
+included with the data. Additionaly, the majority of the features pertain to an
+author's history, so if the author of a submission
+does not have a submission history prior to their first r/ChangeMyView post in
+2016, then that submission is dropped. Lastly, submission are also dropped if there are no responding comments, and hence
+no oppoprtunites at all for the opinion to change. Unlike Tan et al., I do not implement stricter restriction on the dataset
+(10 unique responders and at least 1 OP response).
+
+Utilizing these filtering procedures, `3,618` opinions and authors remain in 2016, each with unique submission histories.
+A summary data table for the most important features of these filtered opinions is given below. A number of features were 
+created by interacting the total number of submissions and mean statistics, and are not featured for brevity.
+
+```{r sum_table, results="asis", echo=FALSE}
+CMV_DAT_POST %>%
+  select(-`(Pre Debate) Creation Time`) %>%
+  as.data.frame() %>%
+stargazer(type = "latex",
+          title = "2016 r/ChangeMyView Unique Author Opinion Features",
+          header = FALSE,
+          digits = 1,
+          summary.stat= c("mean", "sd", "min", "max"))
+```
+
+\newpage
+
+#### Models
+
+Much like Tan et al. and psychologists who have studied self-affirmation theory,
+I want to establish the direction of the effect of the self-affirmation
+features included in the data. Since the variable of interest is binary using 
+iteratively reweighted least squares logistic regression seems an ideal choice.
+
+5 separate logistic regression models are tested using 20 repetitions of 10 fold
+cross validation. There are two baseline models that only utilize the number of
+words in an opinion and the creation time of that opinion, respectively, and
+there are three "full" models: a "standard model" utilizing all the pre debate
+and author history variables, the standard model without creation time, and the
+standard model with all the features, including post debate features. All models
+are trained on centered and scaled data.
+
+#### Results
+
+```{r model_eval}
+graph
+```
+
+Comparing the ROC's between the various models, the creation time of a
+submission is a surprisingly large contributor to ROC. In all models except "#
+Word Only", Tan et al.'s best AUC (`.54`) is outperformed, even without as
+strict of a pre-filtering procedure they utilized. However, complete superiority of the model's proposed here 
+can't necessarily be established, as Tan et al. had access to more submissions, but in previous years, and  they also utilized 
+a single held-out test set versus the repeated 10-fold cross-validation used here.
+
+Despite the low ROC across the board, the standard model is able to achieve a mean sensitivity (true detection rate of opinion changes) of `82%`, and
+a specificity (true detection rate of opinion stability) of `26%`. Indeed, the specificty seems to be the Achilles' heel of all of the models. Even the model that includes 
+post debate features, i.e. the model that "cheats" and looks ahead to add _posteriori_ features of the CMV submission, barely has a discrete improvement over the standard model.
+
+\newpage
+
+```{r fig.width=10, fig.height=13, fig.align="center"}
+library(png)
+library(grid)
+img <- readPNG("~/MACS30200proj/FinalPaper/coef_plot.png")
+grid.raster(img)
+```
+
+The coefficient plot displays a number of significant features.
+Focusing on those that are specifically testing self or outside affirmation, the
+"(Pre Debate) Singular First Person Pronouns" has a statistically significant
+positive effect on the log odds of an opinion changing, which conforms with Tan
+et. al's findings. The total number of singular and plural first person pronouns
+in an author's history have statistically significant positive and negative
+effects on the log odds. The mean number of singular first person pronouns in an author's history
+also have a significant positive effect. These findings are also consistent with Tan et. al, but
+notably, it provides evidence that the effects of self-affirmation extend beyond
+the immidiate past.
+
+There are other significant features as well, and they mostly capture the effects of
+Reddit specific behavior. For instance, the total number of removed submissions in a user's history
+have significant negative effects on the odds of an opinion changing. A submission can be removed by the moderator 
+of a subreddit, and this typically happens if a moderator determines that the submission is against the rules of the 
+subreddit. This result is rather intuitive, as one would expect that users who have trouble posting in accordance with Reddit community rules to be less 
+likely to credit the CMV community for changing their opinion. Of course however, these models cannot prove causality.
+The total number of prior submissions also has a significant effect, though in the negative direction. Here, an intuitive explanation is a little harder 
+to come by, one might posit that more submissions make users more "jaded" to interaction with Reddit, and less susceptible to persuasion by the community as a whole.
+
+Returning to the creation time feature, the coefficient plot shows that it has a
+significant positive effect, in all models it appears in, on the log odds of an
+opinion change. This suggests an increasing trend in opinion changes during
+2016. However, looking at the initial timeline presented in the data section, a polynomial trend might be more appropriate.
+Similarly, there are other variables where we might expect a polynomial trend to be more appropriate. For many of the self-affirmation 
+features, we might expect an _overuse_ of the first person, or really high submission scores to perhaps some sort of "ego" effect.
+
+However, in utilizing a variety of modelling techinques with non-linear predictor effects baked in, 
+
+## Conclusion
+
+Analyzing the submissions and authors in r/ChangeMyView provides a unique
+dataset that contains, explicitly coded, the success or failure of persuasion,
+as well as a nearly exhaustive history of author participation in Reddit. Using
+this data, I've provided evidence that a user's collective past instances of self-affirmation as gathered from their submission content,
+helps make their opinions on CMV more malleable, and evidence that other aspects of a 
+Redditor's submission history, like their expressed sentiment and removed posts, also  
+
+
+
+
+\newpage
+---

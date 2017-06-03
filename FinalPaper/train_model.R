@@ -33,7 +33,7 @@ CMV_DAT <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
   dplyr::select(-starts_with("sd_"), -starts_with("max_"), -starts_with("min_")) %>%
   drop_na() %>%
   mutate(created_utc = created_utc / 86400) %>%
-  rename(`(O) Creation Time` = created_utc,
+  dplyr::rename(`(O) Creation Time` = created_utc,
          `(O) Opinion Change?` = OP_gave_delta,
          `(O) # Words` = num_words,
          `(O) Topic #` = kmeans_topic,
@@ -85,7 +85,7 @@ CMV_DAT_POST <- readRDS("MACS30200proj/FinalPaper/cmv_processed_dat.rds") %>%
   dplyr::select(-starts_with("sd_"), -starts_with("max_"), -starts_with("min_")) %>%
   drop_na() %>%
   mutate(created_utc = created_utc / 86400) %>%
-  rename(`(O) Creation Time` = created_utc,
+  dplyr::rename(`(O) Creation Time` = created_utc,
          `(O) Opinion Change?` = OP_gave_delta,
          `(O) # Words` = num_words,
          `(O) Topic #` = kmeans_topic,
@@ -121,7 +121,7 @@ saveRDS(CMV_DAT_POST, "~/MACS30200proj/FinalPaper/final_data.rds")
 num_folds <- 10
 num_repeats <- 20
 
-train_index <- createDataPartition(CMV_DAT$`(O) Opinion Change?`, p = 1,
+train_index <- createDataPartition(CMV_DAT$`(Post Debate) Opinion Change?`, p = 1,
                                   list = FALSE,
                                   times = 1)
 CMV_DAT_TRAIN <- CMV_DAT[train_index, ]
@@ -143,13 +143,25 @@ ctrl1 <- trainControl(method = "repeatedcv", number = num_folds, repeats = num_r
 
 
 set.seed(69)
-# model1 <- train(`(O) Opinion Change?`~ .,
-#                data = CMV_DAT_TRAIN,
-#                method = "LogitBoost",
-#                preProcess = c("center", "scale"),
-#                trControl = ctrl1,
-#                tuneGrid = Grid1,
-#                metric = "ROC")
+model1 <- train(`(Post Debate) Opinion Change?`~ .,
+               data = CMV_DAT_TRAIN,
+               method = "LogitBoost",
+               preProcess = c("center", "scale"),
+               trControl = ctrl1,
+               tuneGrid = Grid1,
+               metric = "ROC")
+
+# gbmGrid <-  expand.grid(interaction.depth = c(1, 5, 9), 
+#                         n.trees = (1:30) * 50, 
+#                         shrinkage = 0.1,
+#                         n.minobsinnode = 20)
+
+model_gbm <- train(`(Post Debate) Opinion Change?` ~ .,
+                   data = CMV_DAT_TRAIN,
+                   method = "gbm",
+                   preProcess = c("center", "scale"),
+                   trControl = ctrl1)
+                   # tuneGrid = gbmGrid)
 
 ctrl2 <- trainControl(method = "repeatedcv", number = num_folds, repeats = num_repeats,
                      summaryFunction = twoClassSummary,
